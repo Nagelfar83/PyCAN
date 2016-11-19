@@ -1,0 +1,9 @@
+CAN Handler
+:::::::::::
+
+This is the documentation for the CAN handler objeect.
+
+-----------------------------------------------------------------------
+
+.. automodule:: can_handler
+   :members:

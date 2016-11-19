@@ -1,0 +1,459 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. CAN Handler &#8212; PyCAN 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="PyCAN 1.0.1 documentation" href="index.html" />
+    <link rel="prev" title="Welcome to PyCAN’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="can-handler">
+<h1>1. CAN Handler<a class="headerlink" href="#can-handler" title="Permalink to this headline">¶</a></h1>
+<p>This is the documentation for the CAN handler objeect.</p>
+<hr class="docutils" />
+<span class="target" id="module-can_handler"></span><div class="section" id="terms-and-conditions">
+<h2>1.1. Terms and conditions<a class="headerlink" href="#terms-and-conditions" title="Permalink to this headline">¶</a></h2>
+<p>Copywrite 2009 Jim Nilsson.
+PyCAN is distributed under the terms of the GNU Lesser General Public License.</p>
+<blockquote>
+<div><p>This file is part of the PyCAN Libary.</p>
+<p>PyCAN is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>PyCAN is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License and
+GNU Lesser General Public License along with PyCAN.  
+If not, see &lt;<a class="reference external" href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</p>
+</div></blockquote>
+<dl class="class">
+<dt id="can_handler.CanHw">
+<em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanHw</code><a class="reference internal" href="_modules/can_handler.html#CanHw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This is the CANHW class that handles all the CAN 
+communication for the library BeeJay. The class can be used stand alone
+to send an receive CAN messages on CAN.</p>
+<p>It uses the Vector GmbH XL Driver Library to interface with all 
+of Vectors supported hardware.</p>
+<dl class="method">
+<dt id="can_handler.CanHw.create">
+<code class="descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.create" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> The methods is called automatically when a instance
+of the class is created by being called from the __init__ method. It
+creates and initilizes all the global variables for the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.destroy">
+<code class="descname">destroy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.destroy" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method is used to clean up all.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.manualSetup">
+<code class="descname">manualSetup</code><span class="sig-paren">(</span><em>fileIn=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.manualSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.manualSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Setup the CAN hardware manually</p>
+<p><strong>Not yet implemented</strong></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.printHardware">
+<code class="descname">printHardware</code><span class="sig-paren">(</span><em>channelsIn=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.printHardware"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.printHardware" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method prints the connected hardware.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">INPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channelIn</strong> (<em>Int</em>) &#8211; Number of channels to print starts at zero i.e. the
+first channel.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Description:</strong> If no channel is given the method the driver
+scans the ports for connected hardware and prints all avalible hardware
+onto the standard output.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.readCanMsg">
+<code class="descname">readCanMsg</code><span class="sig-paren">(</span><em>msgId=None</em>, <em>outPutInfo=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.readCanMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.readCanMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method is used to read CAN MSG&#8217;s form a specific 
+MSG ID&#8217;s msg-buffer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">INPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>msgId</strong> (<em>Hex</em>) &#8211; The specific MSG ID to fetch CAN MSG from.</li>
+<li><strong>outPutInfo</strong> (<em>Bool</em>) &#8211; Displays information text to the standards output if 
+put to true.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Description:</strong> The msg retreived from the msg buffer of the
+specific CAN MSG ID is always the first stored CAN MSG from the CAN 
+Network. This is because the msg que in the CanMsgHolder object is 
+designed as a FIFO-Que see image bellow. Once the msg is retrieved from
+the buffer it is removed from the que and can&#8217;t be retrieved again. 
+Running the method again will retrieve the next message in the que and
+so forth until the que is empty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">OUTPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tmpMsg</strong> (<em>XLevent</em>) &#8211; Retrieved message from the msg buffer.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.reciveCanMsg">
+<code class="descname">reciveCanMsg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.reciveCanMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.reciveCanMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method is used to grab all messaged that are in 
+the hardware messaged buffer in the CAN hardware.</p>
+<p>The following code takes the messages grabbed from the HW messaged 
+buffer and adds it to the appropriate msg holder object&#8217;s msg buffer. 
+If no msg holder object exists for that specific msg ID one is created 
+and the messaged is added to it&#8217;s msg buffer. This ensourse that each
+msg sent on CAN has its own msg holder object and its own msg buffer the
+size of MAX_MSG_BUFFER_SIZE.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span> 
+        <span class="n">oFrameHolder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="p">[</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">oFrameHolder</span> <span class="o">=</span> <span class="n">CanMsgHolder</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="p">[</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">oFrameHolder</span>
+        
+    <span class="n">oFrameHolder</span><span class="o">.</span><span class="n">addMsgToBuffer</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method is also called by the thread <em>&#8220;rxListenerThread&#8221;</em>
+periodically according to the <em>&#8220;threadFrequency&#8221;</em> defined in the create
+method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.release">
+<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.release" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method is used to release the requested 
+resources.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.request">
+<code class="descname">request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.request" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> The request method opens a selected channel and 
+activates it.</p>
+<p><strong>Detailed Description:</strong> The request class needs to be called after
+the setup method and takes the requested channel opens and 
+activates it for sending and receiving messages onto CAN. It will
+exit if no channel is availeble.</p>
+<p>Once the channel is open and activated the listener thread is started
+and it in it&#8217;s turn starts to collect CAN messages from CAN. The 
+thread is executed periodically according to the &#8220;threadFrequency&#8221; 
+that is setup in the create method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.sendMultipleCanMsg">
+<code class="descname">sendMultipleCanMsg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.sendMultipleCanMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.sendMultipleCanMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Sending multiple CAN MSG</p>
+<p><strong>Not yet implemented</strong></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.sendOneCanMsg">
+<code class="descname">sendOneCanMsg</code><span class="sig-paren">(</span><em>msgId</em>, <em>msgIn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.sendOneCanMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.sendOneCanMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Sends a CAN msg out on the CAN network.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">INPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>msgId</strong> (<em>Hex</em>) &#8211; The MSG ID of the msg to send out onto CAN.</li>
+<li><strong>msgIn</strong> (<em>List of Hex</em>) &#8211; The MSG to send out on to the CAN network.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Description:</strong> The CAN msg need to be formated as below 
+illustrated for this method to work. First byte is always reserved for 
+the number of bytes in the CAN msg. The method returns true of 
+successful otherwise returns false.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">msgListIn</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x02</span><span class="p">,</span> <span class="mh">0xF1</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">OUTPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>return</strong> (<em>Bool</em>) &#8211; Returns true if successful otherwise returns false</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanHw.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>fileIn=None</em>, <em>canLoggingOnOff=False</em>, <em>hardwareType=None</em>, <em>interactive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanHw.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> The setup method is used to setup the CAN Hardware 
+with a available channel to send and receive from.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">INPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fileIn</strong> (<em>string</em>) &#8211; The file location of the vxlapi.dll file for the vectors XL Library.</li>
+<li><strong>canLoggingOnOff</strong> (<em>Bool</em>) &#8211; Turn on or off logging of the CAN traffic.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Description:</strong> N/A</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="can_handler.CanHwChannel">
+<em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanHwChannel</code><a class="reference internal" href="_modules/can_handler.html#CanHwChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHwChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p><a href="#id1"><span class="problematic" id="id2">**</span></a>Description this is the generall hardware CAN channel class. 
+It contains all information about the used hardware
+to be able to open a channel for commuication over CAN.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="can_handler.CanMsg">
+<em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanMsg</code><a class="reference internal" href="_modules/can_handler.html#CanMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the general CAN Msg class. Used to store CAN messages.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="can_handler.CanMsgHolder">
+<em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanMsgHolder</code><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> The Can Msg Holder class is used to hold CAN frames 
+from a specific CAN ID. The CAN ID correlates to the MSG ID in the 
+DBC-file that can be viewed and used together with vectors CANAlyzer. 
+It has a frame buffer that is the size of SIZE_MSG_BUFFER same as that 
+the HW buffer is initialized to.</p>
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.addMsgToBuffer">
+<code class="descname">addMsgToBuffer</code><span class="sig-paren">(</span><em>msgIn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.addMsgToBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.addMsgToBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Adds a CAN message to the messaged buffer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">INPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>msgIn</strong> (<em>XLevent</em>) &#8211; The CAN msg that will be added to the buffer</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Description:</strong> The msg buffer is a list and each candrivers 
+a new msg is added to the msg buffer its added to the end of the
+list. If the msg buffer is full the last entry of the msg buffer is
+disregarded and the new msg is added in its place.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.clearBuffer">
+<code class="descname">clearBuffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.clearBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.clearBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Clears the msg buffer of all messages</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.getLatestMsgFromBuffer">
+<code class="descname">getLatestMsgFromBuffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.getLatestMsgFromBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.getLatestMsgFromBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Retrieves the latest added msg in the msg buffer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">OUTPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>msg</strong> (<em>XLevent</em>) &#8211; The latest msg in the msg buffer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.getMsgFromBuffer">
+<code class="descname">getMsgFromBuffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.getMsgFromBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.getMsgFromBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Not yet implemented</strong></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.getNumberOfMsgInBuffer">
+<code class="descname">getNumberOfMsgInBuffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.getNumberOfMsgInBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.getNumberOfMsgInBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Retrieves the number of msg contained in the msg
+buffer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">OUTPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lengthMsgBuffer</strong> (<em>Integer</em>) &#8211; The number of msg currently in the msg buffer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.CanMsgHolder.getOldestMsgFromBuffer">
+<code class="descname">getOldestMsgFromBuffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#CanMsgHolder.getOldestMsgFromBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanMsgHolder.getOldestMsgFromBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> Retrieves the oldest added msg in the msg buffer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">OUTPUT:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>msg</strong> (<em>XLevent</em>) &#8211; The oldest msg in the msg buffer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="can_handler.RxListenerThread">
+<em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">RxListenerThread</code><span class="sig-paren">(</span><em>methodToRunIn</em>, <em>threadNameIn</em>, <em>runFrequencyIn=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#RxListenerThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.RxListenerThread" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This class handles the thread that is assigned to listen
+to the CAN network and read all the messages transmitted on the connected
+CAN network.</p>
+<dl class="method">
+<dt id="can_handler.RxListenerThread.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#RxListenerThread.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.RxListenerThread.run" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> starts the CAN listener thread with the desired
+thread frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="can_handler.RxListenerThread.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/can_handler.html#RxListenerThread.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.RxListenerThread.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Description:</strong> This method stops the listener thread.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1. CAN Handler</a><ul>
+<li><a class="reference internal" href="#terms-and-conditions">1.1. Terms and conditions</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to PyCAN&#8217;s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/can_handler.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Jim Nilsson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/can_handler.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

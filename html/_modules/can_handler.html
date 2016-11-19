@@ -1,0 +1,1102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>can_handler &#8212; PyCAN 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="top" title="PyCAN 1.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for can_handler</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Terms and conditions</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">Copywrite 2009 Jim Nilsson.</span>
+<span class="sd">PyCAN is distributed under the terms of the GNU Lesser General Public License.</span>
+
+<span class="sd">    This file is part of the PyCAN Libary.</span>
+
+<span class="sd">    PyCAN is free software: you can redistribute it and/or modify</span>
+<span class="sd">    it under the terms of the GNU Lesser General Public License as published by</span>
+<span class="sd">    the Free Software Foundation, either version 3 of the License, or</span>
+<span class="sd">    (at your option) any later version.</span>
+
+<span class="sd">    PyCAN is distributed in the hope that it will be useful,</span>
+<span class="sd">    but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="sd">    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="sd">    GNU Lesser General Public License for more details.</span>
+
+<span class="sd">    You should have received a copy of the GNU General Public License and</span>
+<span class="sd">    GNU Lesser General Public License along with PyCAN.  </span>
+<span class="sd">    If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1">#IMPORTS</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">can_vector_driver</span> <span class="k">import</span> <span class="n">XlDriver</span><span class="p">,</span> <span class="n">s_xl_event</span>                                                      
+
+<span class="c1">#MODULE CONSTANTS</span>
+<span class="n">XL_INVALID_PORTHANDLE</span>       <span class="o">=</span>       <span class="o">-</span><span class="mi">1</span>
+<span class="n">XL_INTERFACE_VERSION</span>        <span class="o">=</span>       <span class="mi">3</span>
+<span class="n">XL_ACTIVATE_RESET_CLOCK</span>     <span class="o">=</span>       <span class="mi">8</span>
+<span class="n">XL_NO_INIT_ACCESS</span>           <span class="o">=</span>       <span class="mi">0</span>
+<span class="n">XL_SUCCESS</span>                  <span class="o">=</span>       <span class="mi">0</span>
+<span class="n">XL_ERR_QUEUE_IS_EMPTY</span>       <span class="o">=</span>       <span class="mi">10</span>
+
+<span class="n">XL_NO_COMMAND</span>               <span class="o">=</span>       <span class="mi">0</span>
+<span class="n">XL_RECEIVE_MSG</span>              <span class="o">=</span>       <span class="mi">1</span>
+<span class="n">XL_CHIP_STATE</span>               <span class="o">=</span>       <span class="mi">4</span>
+<span class="n">XL_TRANSCEIVER</span>              <span class="o">=</span>       <span class="mi">6</span>
+<span class="n">XL_TIMER</span>                    <span class="o">=</span>       <span class="mi">8</span>
+<span class="n">XL_TRANSMIT_MSG</span>             <span class="o">=</span>       <span class="mi">10</span>
+<span class="n">XL_SYNC_PULSE</span>               <span class="o">=</span>       <span class="mi">11</span>
+<span class="n">XL_APPLICATION_NOTIFICATION</span> <span class="o">=</span>       <span class="mi">15</span>
+
+<span class="n">DLC</span>                         <span class="o">=</span>       <span class="mi">8</span>
+<span class="n">SIZE_MSG_BUFFER</span>             <span class="o">=</span>       <span class="mi">256</span>
+
+<span class="n">XLuint64</span>                    <span class="o">=</span>       <span class="n">ctypes</span><span class="o">.</span><span class="n">c_longlong</span>
+<span class="n">XLaccess</span>                    <span class="o">=</span>       <span class="n">XLuint64</span>
+<span class="n">XLportHandle</span>                <span class="o">=</span>       <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span>
+<span class="n">XLeventTag</span>                  <span class="o">=</span>       <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ubyte</span>
+<span class="n">XLevent</span>                     <span class="o">=</span>       <span class="n">s_xl_event</span>
+<span class="n">XLeventList</span>                 <span class="o">=</span>       <span class="n">SIZE_MSG_BUFFER</span><span class="o">*</span><span class="n">XLevent</span>
+
+<div class="viewcode-block" id="CanHwChannel"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHwChannel">[docs]</a><span class="k">class</span> <span class="nc">CanHwChannel</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    **Description this is the generall hardware CAN channel class. </span>
+<span class="sd">    It contains all information about the used hardware</span>
+<span class="sd">    to be able to open a channel for commuication over CAN. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__create</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardware</span>                 <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dllVersion</span>               <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__numberOfChannels</span>         <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelName</span>              <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareType</span>             <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareIndex</span>            <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareChannel</span>          <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverType</span>          <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverState</span>         <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelIndex</span>             <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelMask</span>              <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span>                  <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__connectedBusType</span>         <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareSerialNumber</span>     <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareArticleNumber</span>    <span class="o">=</span> <span class="kc">None</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverName</span>          <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>               <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__accessMask</span>               <span class="o">=</span> <span class="kc">None</span>
+        
+    <span class="k">def</span> <span class="nf">__setHardware</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardware</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardware</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardware</span>    
+        
+    <span class="k">def</span> <span class="nf">__setDllversion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dllVersion</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">__getDllversion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dllVersion</span>
+    
+    <span class="k">def</span> <span class="nf">__setNumberOfChannels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__numberOfChannels</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getNumberOfChannels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__numberOfChannels</span>
+    
+    <span class="k">def</span> <span class="nf">__setChannelName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelName</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">__getChannelName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__channelName</span>
+    
+    <span class="k">def</span> <span class="nf">__setHardwareType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareType</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardwareType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareType</span>
+    
+    <span class="k">def</span> <span class="nf">__setHardwareIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareIndex</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardwareIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareIndex</span>
+
+    <span class="k">def</span> <span class="nf">__setHardwareChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareChannel</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardwareChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareChannel</span>
+    
+    <span class="k">def</span> <span class="nf">__setTransceiverType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverType</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getTransceiverType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverType</span>
+
+    <span class="k">def</span> <span class="nf">__setTransceiverState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverState</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getTransceiverState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverState</span>
+
+    <span class="k">def</span> <span class="nf">__setChannelIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelIndex</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getChannelIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__channelIndex</span>
+
+    <span class="k">def</span> <span class="nf">__setChannelMask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelMask</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getChannelMask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__channelMask</span>
+
+    <span class="k">def</span> <span class="nf">__setIsOnBus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getIsOnBus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span>   
+
+    <span class="k">def</span> <span class="nf">__getConnectedBusType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__connectedBusType</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__setConnectedBusType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__connectedBusType</span>
+
+    <span class="k">def</span> <span class="nf">__setHardwareSerialNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareSerialNumber</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardwareSerialNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareSerialNumber</span>
+    
+    <span class="k">def</span> <span class="nf">__setHardwareArticleNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareArticleNumber</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getHardwareArticleNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__hardwareArticleNumber</span>
+    
+    <span class="k">def</span> <span class="nf">__setTransceiverName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverName</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__getTransceiverName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transceiverName</span> 
+    
+    <span class="k">def</span> <span class="nf">__setPortHandel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getPortHandel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+    
+    <span class="k">def</span> <span class="nf">__setAccessMask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__accessMask</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getAccessMask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__accessMask</span>
+    
+    <span class="n">hardware</span>                 <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardware</span><span class="p">,</span> <span class="n">__setHardware</span><span class="p">)</span>
+    <span class="n">dllVersion</span>               <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getDllversion</span><span class="p">,</span> <span class="n">__setDllversion</span><span class="p">)</span>
+    <span class="n">numberOfChannels</span>         <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getNumberOfChannels</span><span class="p">,</span> <span class="n">__setNumberOfChannels</span><span class="p">)</span>
+    <span class="n">channelName</span>              <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getChannelName</span><span class="p">,</span> <span class="n">__setChannelName</span><span class="p">)</span>
+    <span class="n">hardwareType</span>             <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardwareType</span><span class="p">,</span> <span class="n">__setHardwareType</span><span class="p">)</span>
+    <span class="n">hardwareIndex</span>            <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardwareIndex</span><span class="p">,</span> <span class="n">__setHardwareIndex</span><span class="p">)</span>
+    <span class="n">hardwareChannel</span>          <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardwareChannel</span><span class="p">,</span> <span class="n">__setHardwareChannel</span><span class="p">)</span>
+    <span class="n">transceiverType</span>          <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getTransceiverType</span><span class="p">,</span> <span class="n">__setTransceiverType</span><span class="p">)</span>
+    <span class="n">transceiverState</span>         <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getTransceiverState</span><span class="p">,</span> <span class="n">__setTransceiverState</span><span class="p">)</span>
+    <span class="n">channelIndex</span>             <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getChannelIndex</span><span class="p">,</span> <span class="n">__setChannelIndex</span><span class="p">)</span>
+    <span class="n">channelMask</span>              <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getChannelMask</span><span class="p">,</span> <span class="n">__setChannelMask</span><span class="p">)</span>
+    <span class="n">isOnBus</span>                  <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getIsOnBus</span><span class="p">,</span> <span class="n">__setIsOnBus</span><span class="p">)</span>
+    <span class="n">connectedBusType</span>         <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getConnectedBusType</span><span class="p">,</span> <span class="n">__setConnectedBusType</span><span class="p">)</span>
+    <span class="n">hardwareSerialNumber</span>     <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardwareSerialNumber</span><span class="p">,</span> <span class="n">__setHardwareSerialNumber</span><span class="p">)</span>
+    <span class="n">hardwareArticleNumber</span>    <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getHardwareArticleNumber</span><span class="p">,</span> <span class="n">__setHardwareArticleNumber</span><span class="p">)</span>
+    <span class="n">transceiverName</span>          <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getTransceiverName</span><span class="p">,</span> <span class="n">__setTransceiverName</span><span class="p">)</span>
+    <span class="n">portHandel</span>               <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getPortHandel</span><span class="p">,</span> <span class="n">__setPortHandel</span><span class="p">)</span>
+    <span class="n">accessMask</span>               <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getAccessMask</span><span class="p">,</span> <span class="n">__setAccessMask</span><span class="p">)</span></div>
+                
+<div class="viewcode-block" id="CanMsg"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsg">[docs]</a><span class="k">class</span> <span class="nc">CanMsg</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the general CAN Msg class. Used to store CAN messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Init method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">__create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__id</span>           <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Frame MSG ID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__flags</span>        <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Flags from tranciver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dlc</span>          <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Data length code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__res1</span>         <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Only used by Vector HW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__timeStamp</span>    <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Actual timestamp generated by the hardware (for vectore HW Value is in nanoseconds).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__data</span>         <span class="o">=</span> <span class="kc">None</span> <span class="c1">#Payload i.e. the transmitted / recived data</span>
+    
+    <span class="k">def</span> <span class="nf">__setId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__id</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__id</span>
+    
+    <span class="k">def</span> <span class="nf">__setFlags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__flags</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getFlags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flags</span>
+    
+    <span class="k">def</span> <span class="nf">__setDlc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dlc</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">__getDlc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dlc</span>
+
+    <span class="k">def</span> <span class="nf">__setRes1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__res1</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">__getRes1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__res1</span>
+    
+    <span class="k">def</span> <span class="nf">__setData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__data</span> <span class="o">=</span> <span class="n">value</span>
+        
+    <span class="k">def</span> <span class="nf">__getData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__data</span>
+
+    <span class="k">def</span> <span class="nf">__setTimeStamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__timeStamp</span> <span class="o">=</span> <span class="n">value</span>
+    
+    <span class="k">def</span> <span class="nf">__getTimeStamp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__timeStamp</span>
+    
+    <span class="nb">id</span>          <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getId</span><span class="p">,</span> <span class="n">__setId</span><span class="p">)</span>
+    <span class="n">flags</span>       <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getFlags</span><span class="p">,</span> <span class="n">__setFlags</span><span class="p">)</span>
+    <span class="n">dlc</span>         <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getDlc</span><span class="p">,</span> <span class="n">__setDlc</span><span class="p">)</span>
+    <span class="n">res1</span>        <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getRes1</span><span class="p">,</span> <span class="n">__setRes1</span><span class="p">)</span>
+    <span class="n">data</span>        <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getData</span><span class="p">,</span> <span class="n">__setData</span><span class="p">)</span>
+    <span class="n">timeStamp</span>   <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">__getTimeStamp</span><span class="p">,</span> <span class="n">__setTimeStamp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CanMsgHolder"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder">[docs]</a><span class="k">class</span> <span class="nc">CanMsgHolder</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** The Can Msg Holder class is used to hold CAN frames </span>
+<span class="sd">        from a specific CAN ID. The CAN ID correlates to the MSG ID in the </span>
+<span class="sd">        DBC-file that can be viewed and used together with vectors CANAlyzer. </span>
+<span class="sd">        It has a frame buffer that is the size of SIZE_MSG_BUFFER same as that </span>
+<span class="sd">        the HW buffer is initialized to.  </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__bufferSize</span>           <span class="o">=</span> <span class="n">SIZE_MSG_BUFFER</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span>            <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__latestTimeStamp</span>      <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="CanMsgHolder.addMsgToBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.addMsgToBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">addMsgToBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msgIn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Adds a CAN message to the messaged buffer.</span>
+<span class="sd">            </span>
+<span class="sd">            :INPUT:</span>
+<span class="sd">            :param msgIn: The CAN msg that will be added to the buffer</span>
+<span class="sd">            :type msgIn: XLevent</span>
+<span class="sd">            </span>
+<span class="sd">            **Detailed Description:** The msg buffer is a list and each candrivers </span>
+<span class="sd">            a new msg is added to the msg buffer its added to the end of the</span>
+<span class="sd">            list. If the msg buffer is full the last entry of the msg buffer is</span>
+<span class="sd">            disregarded and the new msg is added in its place.            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="p">)</span> <span class="o">==</span> <span class="n">SIZE_MSG_BUFFER</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msgIn</span><span class="p">)</span>
+        <span class="k">return</span></div>
+    
+<div class="viewcode-block" id="CanMsgHolder.getMsgFromBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.getMsgFromBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">getMsgFromBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Not yet implemented**</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="CanMsgHolder.getLatestMsgFromBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.getLatestMsgFromBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">getLatestMsgFromBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Retrieves the latest added msg in the msg buffer.</span>
+<span class="sd">            </span>
+<span class="sd">            :OUTPUT:</span>
+<span class="sd">            :param msg: The latest msg in the msg buffer</span>
+<span class="sd">            :type msg: XLevent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">msg</span> </div>
+        
+<div class="viewcode-block" id="CanMsgHolder.getOldestMsgFromBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.getOldestMsgFromBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">getOldestMsgFromBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Retrieves the oldest added msg in the msg buffer.</span>
+<span class="sd">            </span>
+<span class="sd">            :OUTPUT:</span>
+<span class="sd">            :param msg: The oldest msg in the msg buffer</span>
+<span class="sd">            :type msg: XLevent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">msg</span> </div>
+    
+<div class="viewcode-block" id="CanMsgHolder.getNumberOfMsgInBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.getNumberOfMsgInBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">getNumberOfMsgInBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Retrieves the number of msg contained in the msg</span>
+<span class="sd">            buffer.</span>
+<span class="sd">            </span>
+<span class="sd">            :OUTPUT:</span>
+<span class="sd">            :param lengthMsgBuffer: The number of msg currently in the msg buffer</span>
+<span class="sd">            :type lengthMsgBuffer: Integer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lengthMsgBuffer</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lengthMsgBuffer</span></div>
+    
+<div class="viewcode-block" id="CanMsgHolder.clearBuffer"><a class="viewcode-back" href="../can_handler.html#can_handler.CanMsgHolder.clearBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">clearBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Clears the msg buffer of all messages</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+    <span class="k">def</span> <span class="nf">__printMsgBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            Used to print out what is currently contained in the msg buffer </span>
+<span class="sd">            onto the standard output</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msgNumber</span>   <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">timeStamp</span>   <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="nb">print</span> <span class="s2">&quot;---------------------------------------------------------------&quot;</span>
+        <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBuffer</span><span class="p">:</span>
+            <span class="n">tmpResponse</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="n">timeStamp</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">timeStamp</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+                <span class="n">tmpResponse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="nb">print</span> <span class="s2">&quot;[ MSG NR: </span><span class="si">%d</span><span class="s2"> ]&quot;</span><span class="o">%</span><span class="n">msgNumber</span>
+            <span class="nb">print</span> <span class="s2">&quot;[ TIMESTAMP: </span><span class="si">%d</span><span class="s2"> ]&quot;</span><span class="o">%</span><span class="n">timeStamp</span>
+            <span class="nb">print</span> <span class="s2">&quot;- MSG: </span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">__li2ls</span><span class="p">(</span><span class="n">tmpResponse</span><span class="p">)</span>
+            <span class="n">msgNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span> <span class="s2">&quot;---------------------------------------------------------------&quot;</span> 
+        
+    <span class="k">def</span> <span class="nf">__li2ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">liIn</span><span class="p">,</span> <span class="n">iBaseIn</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span> <span class="n">iMinNrOfChars</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            takes a list of integers and returns a list of strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span> <span class="n">iBaseIn</span> <span class="o">==</span> <span class="mi">16</span> <span class="p">):</span>
+            <span class="n">sConv</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%0*X</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sConv</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%0*d</span><span class="s2">&quot;</span>
+    
+        <span class="n">ls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">iData</span> <span class="ow">in</span> <span class="n">liIn</span><span class="p">:</span>
+            <span class="n">ls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">sConv</span> <span class="o">%</span> <span class="p">(</span><span class="n">iMinNrOfChars</span><span class="p">,</span><span class="n">iData</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ls</span></div>
+    
+<div class="viewcode-block" id="CanHw"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw">[docs]</a><span class="k">class</span> <span class="nc">CanHw</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This is the CANHW class that handles all the CAN </span>
+<span class="sd">        communication for the library BeeJay. The class can be used stand alone</span>
+<span class="sd">        to send an receive CAN messages on CAN.</span>
+<span class="sd">        </span>
+<span class="sd">        It uses the Vector GmbH XL Driver Library to interface with all </span>
+<span class="sd">        of Vectors supported hardware.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">ERROR_MSG</span> <span class="o">=</span> \
+    <span class="p">{</span>             
+        <span class="mi">0</span>  <span class="p">:</span>   <span class="s1">&#39;[- General error -]&#39;</span><span class="p">,</span>
+        <span class="mi">1</span>  <span class="p">:</span>   <span class="s1">&#39;[- Not yet implemented -]&#39;</span><span class="p">,</span>         
+        <span class="mi">2</span>  <span class="p">:</span>   <span class="s1">&#39;[- Not supported yet -]&#39;</span><span class="p">,</span>
+        <span class="mi">3</span>  <span class="p">:</span>   <span class="s1">&#39;[- No hardware selected -]&#39;</span><span class="p">,</span>
+        <span class="mi">4</span>  <span class="p">:</span>   <span class="s1">&#39;[- No hardware present -]&#39;</span><span class="p">,</span>
+        <span class="mi">5</span>  <span class="p">:</span>   <span class="s1">&#39;[- No availble channels to select.-]&#39;</span><span class="p">,</span>
+        <span class="mi">6</span>  <span class="p">:</span>   <span class="s1">&#39;[- Not yet supported please choose none interactive mode i.e. interactive = False -]&#39;</span><span class="p">,</span>
+        <span class="mi">7</span>  <span class="p">:</span>   <span class="s1">&#39;[- All channels occupied or no hardware present. Please make atleast one channel available -]&#39;</span><span class="p">,</span>
+        <span class="mi">8</span>  <span class="p">:</span>   <span class="s1">&#39;[-  -]&#39;</span>
+    <span class="p">}</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>        
+        <span class="k">return</span>
+    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **The methods below are common methods for all HW</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    
+<div class="viewcode-block" id="CanHw.create"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** The methods is called automatically when a instance</span>
+<span class="sd">            of the class is created by being called from the __init__ method. It</span>
+<span class="sd">            creates and initilizes all the global variables for the class.            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#NEW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__channelList</span>              <span class="o">=</span> <span class="p">[]</span>                <span class="c1"># A list containing all available channes from each connected HW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__selectedChannel</span>          <span class="o">=</span> <span class="kc">None</span>              <span class="c1"># The selcted HW channel to transmitt and recvive messages from</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span>            <span class="o">=</span> <span class="p">{}</span>                <span class="c1"># Container of all recived CAN mesages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>  <span class="c1"># Thred lock for common resources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__threadFrequency</span>          <span class="o">=</span> <span class="mf">0.005</span>             <span class="c1"># Recive thred frequency</span>
+           
+        <span class="c1">#OLD</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__xlDriverConfig</span>           <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hwTypeList</span>               <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hwIndexList</span>              <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span>               <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>               <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>           <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__txListenerThread</span>         <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span>          <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span>          <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggin</span>                <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggFile</span>              <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span>                  <span class="o">=</span> <span class="kc">False</span>
+
+        
+        
+
+        <span class="k">return</span></div>
+    
+<div class="viewcode-block" id="CanHw.setup"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">canLoggingOnOff</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">hardwareType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">interactive</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** The setup method is used to setup the CAN Hardware </span>
+<span class="sd">            with a available channel to send and receive from.</span>
+<span class="sd">            </span>
+<span class="sd">            :INPUT:</span>
+<span class="sd">            :param fileIn: The file location of the vxlapi.dll file for the vectors XL Library.</span>
+<span class="sd">            :type fileIn: string</span>
+<span class="sd">            :param canLoggingOnOff: Turn on or off logging of the CAN traffic.</span>
+<span class="sd">            :type canLoggingOnOff: Bool</span>
+<span class="sd">            </span>
+<span class="sd">            **Detailed Description:** N/A</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">hardwareType</span> <span class="o">==</span> <span class="s1">&#39;Vector&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__setupVectorHw</span><span class="p">(</span><span class="n">fileIn</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
+            
+        <span class="k">elif</span><span class="p">(</span><span class="n">hardwareType</span> <span class="o">==</span> <span class="s1">&#39;Kvaser&#39;</span><span class="p">):</span>
+            <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        
+        <span class="k">elif</span><span class="p">(</span><span class="n">hardwareType</span> <span class="o">==</span> <span class="s1">&#39;Peak&#39;</span><span class="p">):</span>
+            <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="k">return</span>
+        
+        <span class="c1">#TODO fix independent logging from diffrent CAN HW soruces    </span>
+        <span class="k">if</span> <span class="n">canLoggingOnOff</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggin</span> <span class="o">=</span> <span class="n">canLoggingOnOff</span>
+            <span class="n">currentDate</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">currentTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H-%M-%S&quot;</span><span class="p">)</span> 
+            <span class="n">canLoggFileName</span> <span class="o">=</span> <span class="s2">&quot;canLogg_&quot;</span><span class="o">+</span><span class="s2">&quot;Date_&quot;</span><span class="o">+</span><span class="n">currentDate</span><span class="o">+</span><span class="s2">&quot;_Time_&quot;</span><span class="o">+</span><span class="n">currentTime</span><span class="o">+</span><span class="s2">&quot;.txt&quot;</span>           
+            <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">canLoggFileName</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+            <span class="n">loggFileHeader</span> <span class="o">=</span> <span class="s2">&quot;[ - TIMESTAMP - ]</span><span class="se">\t</span><span class="s2"> [ - ID - ]</span><span class="se">\t\t\t</span><span class="s2"> [ - DATA - ]</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggFile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">loggFileHeader</span><span class="p">)</span>
+        <span class="k">return</span></div>
+   
+<div class="viewcode-block" id="CanHw.manualSetup"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.manualSetup">[docs]</a>    <span class="k">def</span> <span class="nf">manualSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Setup the CAN hardware manually</span>
+<span class="sd">            </span>
+<span class="sd">            **Not yet implemented**</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="CanHw.request"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.request">[docs]</a>    <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** The request method opens a selected channel and </span>
+<span class="sd">            activates it.</span>
+<span class="sd">            </span>
+<span class="sd">            **Detailed Description:** The request class needs to be called after</span>
+<span class="sd">            the setup method and takes the requested channel opens and </span>
+<span class="sd">            activates it for sending and receiving messages onto CAN. It will</span>
+<span class="sd">            exit if no channel is availeble.</span>
+<span class="sd">            </span>
+<span class="sd">            Once the channel is open and activated the listener thread is started</span>
+<span class="sd">            and it in it&#39;s turn starts to collect CAN messages from CAN. The </span>
+<span class="sd">            thread is executed periodically according to the &quot;threadFrequency&quot; </span>
+<span class="sd">            that is setup in the create method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;No CAN Channel chosen to open </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__openChannel</span><span class="p">():</span>
+                <span class="nb">print</span> <span class="s2">&quot;Port could not be opened already initialized </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__activateChannel</span><span class="p">():</span>
+                <span class="nb">print</span> <span class="s2">&quot;Could not activate channel </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="k">return</span>
+            
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Opened and activated [ </span><span class="si">%s</span><span class="s2"> ] </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span><span class="o">.</span><span class="n">name</span>
+            <span class="nb">print</span> <span class="n">text</span>
+            
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.005</span><span class="p">)</span> <span class="c1">#Allows the MSG Queue to fill up with messages</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__rxListenerThreadStart</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="CanHw.sendOneCanMsg"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.sendOneCanMsg">[docs]</a>    <span class="k">def</span> <span class="nf">sendOneCanMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msgId</span><span class="p">,</span> <span class="n">msgIn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** Sends a CAN msg out on the CAN network.</span>
+<span class="sd">        </span>
+<span class="sd">        :INPUT:</span>
+<span class="sd">        :param msgId: The MSG ID of the msg to send out onto CAN.</span>
+<span class="sd">        :type msgId: Hex</span>
+<span class="sd">        :param msgIn: The MSG to send out on to the CAN network.</span>
+<span class="sd">        :type msgIn: List of Hex</span>
+<span class="sd">        </span>
+<span class="sd">        **Detailed Description:** The CAN msg need to be formated as below </span>
+<span class="sd">        illustrated for this method to work. First byte is always reserved for </span>
+<span class="sd">        the number of bytes in the CAN msg. The method returns true of </span>
+<span class="sd">        successful otherwise returns false.</span>
+<span class="sd">        </span>
+<span class="sd">        .. code:: python</span>
+<span class="sd">            </span>
+<span class="sd">            msgListIn = [0x02, 0xF1, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00]</span>
+<span class="sd">          </span>
+<span class="sd">        :OUTPUT:</span>
+<span class="sd">        :param return: Returns true if successful otherwise returns false </span>
+<span class="sd">        :type return: Bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;No CAN Channel open for transmit aborting request </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">return</span> <span class="kc">False</span>
+           
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span> <span class="o">=</span> <span class="n">XLeventList</span><span class="p">()</span>
+        
+        <span class="n">messageCount</span>    <span class="o">=</span>   <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">portHandle</span>      <span class="o">=</span>   <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+        <span class="n">accessMask</span>      <span class="o">=</span>   <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tag</span>                <span class="o">=</span> <span class="n">XL_TRANSMIT_MSG</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span>     <span class="o">=</span> <span class="n">msgId</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">dlc</span>    <span class="o">=</span> <span class="n">DLC</span>
+        
+        <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">msgIn</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">byte</span><span class="p">]</span>  <span class="o">=</span> <span class="n">msgIn</span><span class="p">[</span><span class="n">byte</span><span class="p">]</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlCanTransmit</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">accessMask</span><span class="p">,</span> <span class="n">messageCount</span> \
+                                         <span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListTx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="CanHw.sendMultipleCanMsg"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.sendMultipleCanMsg">[docs]</a>    <span class="k">def</span> <span class="nf">sendMultipleCanMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** Sending multiple CAN MSG</span>
+<span class="sd">            </span>
+<span class="sd">            **Not yet implemented** </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="CanHw.reciveCanMsg"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.reciveCanMsg">[docs]</a>    <span class="k">def</span> <span class="nf">reciveCanMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method is used to grab all messaged that are in </span>
+<span class="sd">        the hardware messaged buffer in the CAN hardware.  </span>
+<span class="sd">        </span>
+<span class="sd">        The following code takes the messages grabbed from the HW messaged </span>
+<span class="sd">        buffer and adds it to the appropriate msg holder object&#39;s msg buffer. </span>
+<span class="sd">        If no msg holder object exists for that specific msg ID one is created </span>
+<span class="sd">        and the messaged is added to it&#39;s msg buffer. This ensourse that each</span>
+<span class="sd">        msg sent on CAN has its own msg holder object and its own msg buffer the</span>
+<span class="sd">        size of MAX_MSG_BUFFER_SIZE.</span>
+<span class="sd">        </span>
+<span class="sd">        .. code:: python</span>
+<span class="sd">            </span>
+<span class="sd">            for msg in self.__msgBufferListRx:</span>
+<span class="sd">                try: </span>
+<span class="sd">                    oFrameHolder = self.__msgHolderList[msg.tagData.msg.id]</span>
+<span class="sd">                except:</span>
+<span class="sd">                    oFrameHolder = CanMsgHolder()</span>
+<span class="sd">                    self.__msgHolderList[msg.tagData.msg.id] = oFrameHolder</span>
+<span class="sd">                    </span>
+<span class="sd">                oFrameHolder.addMsgToBuffer(msg)</span>
+<span class="sd">        </span>
+<span class="sd">        This method is also called by the thread *&quot;rxListenerThread&quot;*</span>
+<span class="sd">        periodically according to the *&quot;threadFrequency&quot;* defined in the create</span>
+<span class="sd">        method. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__isOnBus</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;No CAN Channel open for transmit aborting request </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span> <span class="o">=</span> <span class="n">XLeventList</span><span class="p">()</span>
+        
+        <span class="n">portHandle</span>          <span class="o">=</span>   <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+        <span class="n">pEventCount</span>         <span class="o">=</span>   <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">SIZE_MSG_BUFFER</span><span class="p">)</span>
+        
+        <span class="n">xlStatus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlReceive</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">pEventCount</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">)</span>
+       
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span> 
+        <span class="k">if</span> <span class="n">xlStatus</span> <span class="o">!=</span> <span class="n">XL_ERR_QUEUE_IS_EMPTY</span><span class="p">:</span>
+            
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span> 
+                    <span class="n">oFrameHolder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="p">[</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">oFrameHolder</span> <span class="o">=</span> <span class="n">CanMsgHolder</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="p">[</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">oFrameHolder</span>
+                    
+                <span class="n">oFrameHolder</span><span class="o">.</span><span class="n">addMsgToBuffer</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                          
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggin</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="mh">0x00</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__canlogger</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">return</span></div>
+    
+<div class="viewcode-block" id="CanHw.readCanMsg"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.readCanMsg">[docs]</a>    <span class="k">def</span> <span class="nf">readCanMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msgId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">outPutInfo</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method is used to read CAN MSG&#39;s form a specific </span>
+<span class="sd">        MSG ID&#39;s msg-buffer. </span>
+<span class="sd">        </span>
+<span class="sd">        :INPUT:</span>
+<span class="sd">        :param msgId: The specific MSG ID to fetch CAN MSG from.</span>
+<span class="sd">        :type msgId: Hex</span>
+<span class="sd">        :param outPutInfo: Displays information text to the standards output if </span>
+<span class="sd">                           put to true.</span>
+<span class="sd">        :type outPutInfo: Bool</span>
+<span class="sd">        </span>
+<span class="sd">        **Detailed Description:** The msg retreived from the msg buffer of the</span>
+<span class="sd">        specific CAN MSG ID is always the first stored CAN MSG from the CAN </span>
+<span class="sd">        Network. This is because the msg que in the CanMsgHolder object is </span>
+<span class="sd">        designed as a FIFO-Que see image bellow. Once the msg is retrieved from</span>
+<span class="sd">        the buffer it is removed from the que and can&#39;t be retrieved again. </span>
+<span class="sd">        Running the method again will retrieve the next message in the que and</span>
+<span class="sd">        so forth until the que is empty.</span>
+<span class="sd">        </span>
+<span class="sd">           </span>
+<span class="sd">        :OUTPUT:</span>
+<span class="sd">        :param tmpMsg: Retrieved message from the msg buffer.</span>
+<span class="sd">        :type tmpMsg: XLevent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">msgId</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;No MSG ID given&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">msgId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">outPutInfo</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;No MSG from ID 0x</span><span class="si">%0.2X</span><span class="s2"> received...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">msgId</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="n">msgId</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">tmpMsgHolder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgHolderList</span><span class="p">[</span><span class="n">msgId</span><span class="p">]</span>
+            <span class="n">tmpMsg</span> <span class="o">=</span>  <span class="n">tmpMsgHolder</span><span class="o">.</span><span class="n">getOldestMsgFromBuffer</span><span class="p">()</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">tmpMsg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commonResourceThreadLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">return</span></div>
+        
+<div class="viewcode-block" id="CanHw.release"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.release">[docs]</a>    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method is used to release the requested </span>
+<span class="sd">        resources.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rxListenerThreadStop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__deactivateChannel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__closeChannel</span><span class="p">()</span></div>
+     
+<div class="viewcode-block" id="CanHw.destroy"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.destroy">[docs]</a>    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method is used to clean up all.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__xlDriverConfig</span>       <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hwTypeList</span>           <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__hwIndexList</span>          <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span>           <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>           <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>       <span class="o">=</span> <span class="kc">None</span></div>
+    
+<div class="viewcode-block" id="CanHw.printHardware"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHw.printHardware">[docs]</a>    <span class="k">def</span> <span class="nf">printHardware</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channelsIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method prints the connected hardware. </span>
+<span class="sd">            </span>
+<span class="sd">        :INPUT: </span>
+<span class="sd">        :param channelIn: Number of channels to print starts at zero i.e. the</span>
+<span class="sd">                          first channel.</span>
+<span class="sd">        :type channelIn: Int</span>
+<span class="sd">        </span>
+<span class="sd">        **Detailed Description:** If no channel is given the method the driver</span>
+<span class="sd">        scans the ports for connected hardware and prints all avalible hardware</span>
+<span class="sd">        onto the standard output.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlPrintDriverConfig</span><span class="p">(</span><span class="n">channelsIn</span><span class="p">)</span>
+        
+        <span class="k">return</span></div>
+    
+    <span class="k">def</span> <span class="nf">__setupVectorHw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileIn</span><span class="p">,</span> <span class="n">interactive</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span> <span class="o">=</span> <span class="n">XlDriver</span><span class="p">()</span> 
+        
+        <span class="k">if</span> <span class="n">fileIn</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;[- No path to the VectorXL driver was given -]&quot;</span>
+            
+            <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;i386&#39;</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;[- Using default path: C:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">Public</span><span class="se">\\</span><span class="s2">Documents</span><span class="se">\\</span><span class="s2">Vector XL Driver Library</span><span class="se">\\</span><span class="s2">bin</span><span class="se">\\</span><span class="s2">vxlapi.dll -]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">fileIn</span> <span class="o">=</span> <span class="s1">&#39;C:</span><span class="se">\\</span><span class="s1">Users</span><span class="se">\\</span><span class="s1">Public</span><span class="se">\\</span><span class="s1">Documents</span><span class="se">\\</span><span class="s1">Vector XL Driver Library</span><span class="se">\\</span><span class="s1">bin</span><span class="se">\\</span><span class="s1">vxlapi.dll&#39;</span>
+            <span class="k">elif</span> <span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;AMD64&#39;</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;[- Using default path: C:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">Public</span><span class="se">\\</span><span class="s2">Documents</span><span class="se">\\</span><span class="s2">Vector XL Driver Library</span><span class="se">\\</span><span class="s2">bin</span><span class="se">\\</span><span class="s2">vxlapi64.dll -]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">fileIn</span> <span class="o">=</span> <span class="s1">&#39;C:</span><span class="se">\\</span><span class="s1">Users</span><span class="se">\\</span><span class="s1">Public</span><span class="se">\\</span><span class="s1">Documents</span><span class="se">\\</span><span class="s1">Vector XL Driver Library</span><span class="se">\\</span><span class="s1">bin</span><span class="se">\\</span><span class="s1">vxlapi64.dll&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;[- Platform not recognisable -]&quot;</span>
+                <span class="nb">print</span> <span class="s2">&quot;[- No library loaded! -]&quot;</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1">#Load library for access to the Vextor XL Driver               </span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">xlLoadLibrary</span><span class="p">(</span><span class="n">fileIn</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1">#Open driver to access the internal functions of the XL driver</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">xlOpenDriver</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1">#If interactive = True then the user will be promed via standard I/O to enter input to the setup</span>
+        <span class="c1">#If interactive = False then the software will automatically find the first avilable channel and open it</span>
+        <span class="k">if</span> <span class="n">interactive</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#Check if the software can access the driver configuration</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">xlGetDriverConfig</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1">#Get the complete driver configuration (all channels)</span>
+                <span class="n">xlDriverConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">xlGetDriverConfig</span><span class="p">()</span>
+                <span class="c1">#Extract each channels driver configuration and add it to a new channel object in the channelList</span>
+                <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">channelCount</span><span class="p">):</span>
+                    <span class="n">tmpCanHwChannel</span> <span class="o">=</span> <span class="n">CanHwChannel</span><span class="p">()</span> 
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardware</span>                <span class="o">=</span> <span class="s1">&#39;Vector&#39;</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">dllVersion</span>              <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">dllVersion</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">numberOfChannels</span>        <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">channelCount</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">channelName</span>             <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardwareType</span>            <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">HARDWARE_TYPE_MSG</span><span class="p">[</span><span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">hwType</span><span class="p">]</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardwareIndex</span>           <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">hwIndex</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardwareChannel</span>         <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">hwChannel</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">transceiverType</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">TRANSCEIVER_TYPE_MSG</span><span class="p">[</span><span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">transceiverType</span><span class="p">]</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">transceiverState</span>        <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">transceiverState</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">channelIndex</span>            <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">channelIndex</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">channelMask</span>             <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">channelMask</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">isOnBus</span>                 <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">IS_ON_BUS_MSG</span><span class="p">[</span><span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">isOnBus</span><span class="p">]</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">connectedBusType</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">BUS_TYPE_MSG</span><span class="p">[</span><span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">connectedBusType</span><span class="p">]</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardwareSerialNumber</span>    <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">serialNumber</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">hardwareArticleNumber</span>   <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">articleNumber</span>
+                    <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">transceiverName</span>         <span class="o">=</span> <span class="n">xlDriverConfig</span><span class="o">.</span><span class="n">Channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">transceiverName</span>                
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__channelList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmpCanHwChannel</span><span class="p">)</span> <span class="c1">#Add the channel to the list</span>
+                    
+                    <span class="c1">#Find the first available channel that is not occupied or open.</span>
+                    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;CAN&#39;</span><span class="p">,</span> <span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">transceiverType</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">tmpCanHwChannel</span><span class="o">.</span><span class="n">isOnBus</span> <span class="o">==</span> <span class="s1">&#39;NO&#39;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__selectedChannel</span> <span class="o">=</span> <span class="n">tmpCanHwChannel</span>
+                        
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedChannel</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+                <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR_MSG</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+                <span class="k">return</span> <span class="kc">False</span> 
+            
+            <span class="c1">#Open CAN selected channel</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__selectedChannel</span><span class="o">.</span><span class="n">portHandel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedChannel</span><span class="o">.</span><span class="n">accessMask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__oXLDRIVER</span><span class="o">.</span><span class="n">xlOpenPort</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">userName</span><span class="p">,</span> <span class="n">accessMask</span><span class="p">,</span> <span class="n">permissionMask</span><span class="p">,</span> <span class="n">rxQueueSize</span><span class="p">,</span> <span class="n">xlInterfaceVersion</span><span class="p">,</span> <span class="n">busType</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__openChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            Opens a CAN Channel for read/write access</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">portHandle</span>          <span class="o">=</span> <span class="n">XLportHandle</span><span class="p">(</span><span class="n">XL_INVALID_PORTHANDLE</span><span class="p">)</span>
+        <span class="n">userName</span>            <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">(</span><span class="s1">&#39;xlCANControlApp&#39;</span><span class="p">)</span>
+        <span class="n">accessMask</span>          <span class="o">=</span> <span class="n">XLaccess</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span><span class="o">.</span><span class="n">channelMask</span><span class="p">)</span>
+        <span class="n">permissionMask</span>      <span class="o">=</span> <span class="n">XLaccess</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__canChannel</span><span class="o">.</span><span class="n">channelMask</span><span class="p">)</span>
+        <span class="n">rxQueueSize</span>         <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">SIZE_MSG_BUFFER</span><span class="p">)</span>
+        <span class="n">xlInterfaceVersion</span>  <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">XL_INTERFACE_VERSION</span><span class="p">)</span>
+        <span class="n">busType</span>             <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">XlDriver</span><span class="o">.</span><span class="n">BUS_TYPE</span><span class="p">[</span><span class="s1">&#39;XL_BUS_TYPE_CAN&#39;</span><span class="p">])</span>
+        
+        <span class="p">[</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">permissionMask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlOpenPort</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> \
+                                       <span class="n">userName</span><span class="p">,</span> <span class="n">accessMask</span><span class="p">,</span> <span class="n">permissionMask</span><span class="p">,</span> \
+                                       <span class="n">rxQueueSize</span><span class="p">,</span> <span class="n">xlInterfaceVersion</span><span class="p">,</span> <span class="n">busType</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">permissionMask</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">XL_NO_INIT_ACCESS</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>       <span class="o">=</span> <span class="n">portHandle</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>   <span class="o">=</span> <span class="n">permissionMask</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">def</span> <span class="nf">__activateChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            Activates a designated CAN channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">portHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+        <span class="n">accessMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>
+        <span class="n">busType</span>    <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">XlDriver</span><span class="o">.</span><span class="n">BUS_TYPE</span><span class="p">[</span><span class="s1">&#39;XL_BUS_TYPE_CAN&#39;</span><span class="p">])</span>
+        <span class="n">flags</span>      <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">(</span><span class="n">XL_ACTIVATE_RESET_CLOCK</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlActivateChannel</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">accessMask</span><span class="p">,</span> \
+                                                <span class="n">busType</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">__canlogger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            This method loggs all the traffic on CAN during the measurements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeStamp</span>   <span class="o">=</span>   <span class="n">msg</span><span class="o">.</span><span class="n">timeStamp</span>
+        <span class="n">msgId</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">byte1</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">byte2</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">byte3</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">byte4</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">byte5</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">byte6</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">byte7</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="n">byte8</span>       <span class="o">=</span>   <span class="s2">&quot;</span><span class="si">%02X</span><span class="s2"> &quot;</span><span class="o">%</span><span class="n">msg</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="n">loggStr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timeStamp</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">msgId</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">byte1</span> <span class="o">+</span> <span class="n">byte2</span> <span class="o">+</span> <span class="n">byte3</span> <span class="o">+</span> <span class="n">byte4</span> <span class="o">+</span> <span class="n">byte5</span> <span class="o">+</span> <span class="n">byte6</span> <span class="o">+</span> <span class="n">byte7</span> <span class="o">+</span> <span class="n">byte8</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__canLoggFile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">loggStr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__printCanMsgList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canMsgListIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Internal method.</span>
+<span class="sd">            </span>
+<span class="sd">            This internal method is for debug purpose only. It takes a list of</span>
+<span class="sd">            can messaged of type XLeventList and prints it to the standard</span>
+<span class="sd">            output. if no input variable is given to the method it prints all the</span>
+<span class="sd">            messages that are currently in the msgBufferListRx variable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">canMsgListIn</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">SIZE_MSG_BUFFER</span><span class="o">/</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">msg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">msg2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">msg3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">msg4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__msgBufferListRx</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span>
+                <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--------------------------------------------------------------------------------------------&quot;</span>
+                <span class="nb">print</span> <span class="s2">&quot;[ </span><span class="si">%d</span><span class="s2"> ]&quot;</span> <span class="o">%</span><span class="n">x</span>
+                <span class="nb">print</span> <span class="s2">&quot;Buffer Slot Nr: &quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span>                       <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Buffer Slot Nr: &quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>                       <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Buffer Slot Nr: &quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>                       <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Buffer Slot Nr: &quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">3</span>
+                <span class="nb">print</span> <span class="s2">&quot;Event Tag: &quot;</span><span class="p">,</span> <span class="n">msg1</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>                     <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Event Tag: &quot;</span><span class="p">,</span> <span class="n">msg2</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>                     <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Event Tag: &quot;</span><span class="p">,</span> <span class="n">msg3</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>                     <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Event Tag: &quot;</span><span class="p">,</span> <span class="n">msg4</span><span class="o">.</span><span class="n">tag</span>
+                <span class="nb">print</span> <span class="s2">&quot;Time Stamp: &quot;</span><span class="p">,</span> <span class="n">msg1</span><span class="o">.</span><span class="n">timeStamp</span><span class="p">,</span>              <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Time Stamp: &quot;</span><span class="p">,</span> <span class="n">msg2</span><span class="o">.</span><span class="n">timeStamp</span><span class="p">,</span>                <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Time Stamp: &quot;</span><span class="p">,</span> <span class="n">msg3</span><span class="o">.</span><span class="n">timeStamp</span><span class="p">,</span>                <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Time Stamp: &quot;</span><span class="p">,</span> <span class="n">msg4</span><span class="o">.</span><span class="n">timeStamp</span>
+                <span class="nb">print</span> <span class="s2">&quot;Msg Id: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>    <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Msg Id: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>    <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Msg Id: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>    <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Msg Id: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>     
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+                <span class="nb">print</span> <span class="s2">&quot;Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg1</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg2</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg3</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> Data: 0x</span><span class="si">%0.2X</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">msg4</span><span class="o">.</span><span class="n">tagData</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">4</span>
+        
+    <span class="k">def</span> <span class="nf">__rxListenerThreadStart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rxListenerThread</span> <span class="o">=</span> <span class="n">RxListenerThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reciveCanMsg</span><span class="p">,</span> \
+                                                   <span class="s2">&quot;rxListenerThread&quot;</span><span class="p">,</span> \
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">__threadFrequency</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rxListenerThread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            
+    <span class="k">def</span> <span class="nf">__rxListenerThreadStop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rxListenerThread</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+   
+    <span class="k">def</span> <span class="nf">__deactivateChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            Deactivates the CAN channel</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span>
+        
+        <span class="n">portHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+        <span class="n">accessMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__permissionMask</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlDeactivateChannel</span><span class="p">(</span><span class="n">portHandle</span><span class="p">,</span> <span class="n">accessMask</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__closeChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            Closes the opened CAN channel</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">portHandle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__portHandle</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">oXLDRIVER</span><span class="o">.</span><span class="n">xlClosePort</span><span class="p">(</span><span class="n">portHandle</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RxListenerThread"><a class="viewcode-back" href="../can_handler.html#can_handler.RxListenerThread">[docs]</a><span class="k">class</span> <span class="nc">RxListenerThread</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    **Description:** This class handles the thread that is assigned to listen</span>
+<span class="sd">    to the CAN network and read all the messages transmitted on the connected</span>
+<span class="sd">    CAN network. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodToRunIn</span><span class="p">,</span> <span class="n">threadNameIn</span><span class="p">,</span> <span class="n">runFrequencyIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        internal method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">methodToRun</span>    <span class="o">=</span> <span class="n">methodToRunIn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threadName</span>     <span class="o">=</span> <span class="n">threadNameIn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runFrequency</span>   <span class="o">=</span> <span class="n">runFrequencyIn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span>     <span class="o">=</span> <span class="kc">False</span>
+                
+        <span class="k">if</span> <span class="n">runFrequencyIn</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runFrequency</span> <span class="o">=</span> <span class="mf">0.005</span>
+        
+<div class="viewcode-block" id="RxListenerThread.run"><a class="viewcode-back" href="../can_handler.html#can_handler.RxListenerThread.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            **Description:** starts the CAN listener thread with the desired</span>
+<span class="sd">            thread frequency.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Starting CAN listener thread with FRQ </span><span class="si">%.3f</span><span class="s2"> [sec]</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">runFrequency</span>
+        <span class="nb">print</span> <span class="n">text</span>
+        
+        <span class="k">while</span> <span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">break</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">methodToRun</span><span class="p">()</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runFrequency</span><span class="p">)</span>
+            
+        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Stopping CAN listener thread</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="nb">print</span> <span class="n">text</span>
+        <span class="k">return</span>         </div>
+    
+<div class="viewcode-block" id="RxListenerThread.stop"><a class="viewcode-back" href="../can_handler.html#can_handler.RxListenerThread.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Description:** This method stops the listener thread.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopThread</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span></div></div>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>  
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        IMPORTAN READ THIS!</span>
+<span class="sd">        *******************</span>
+<span class="sd">          </span>
+<span class="sd">        This is used to debug the module or to run the module</span>
+<span class="sd">        by it self. Pleas comment away when not in use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">oCANHW</span> <span class="o">=</span> <span class="n">CanHw</span><span class="p">()</span>
+    <span class="n">fileIn</span> <span class="o">=</span> <span class="s1">&#39;C:</span><span class="se">\\</span><span class="s1">Users</span><span class="se">\\</span><span class="s1">Public</span><span class="se">\\</span><span class="s1">Documents</span><span class="se">\\</span><span class="s1">Vector XL Driver Library</span><span class="se">\\</span><span class="s1">bin</span><span class="se">\\</span><span class="s1">vxlapi64.dll&#39;</span>
+    <span class="n">oCANHW</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">fileIn</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">canLoggingOnOff</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">hardwareType</span> <span class="o">=</span> <span class="s1">&#39;Vector&#39;</span><span class="p">,</span> <span class="n">interactive</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> 
+<span class="c1">#     oCANHW.request()</span>
+<span class="c1">#     oCANHW.printHardware()</span>
+<span class="c1">#     msgBufferList = []</span>
+<span class="c1">#               </span>
+<span class="c1">#     msg = [0x03,0x22,0xF1,0x86]</span>
+<span class="c1">#     nodeAdress = 0x738</span>
+<span class="c1">#          </span>
+<span class="c1">#     oCANHW.sendOneCanMsg(nodeAdress, msg)</span>
+<span class="c1">#               </span>
+<span class="c1">#     </span>
+<span class="c1">#     while(1):          </span>
+<span class="c1">#         msg = oCANHW.readCanMsg(0x10)</span>
+<span class="c1">#              </span>
+<span class="c1">#         print &quot;\n[ TIMESTAMP: %d ]&quot;%msg.timeStamp</span>
+<span class="c1">#         print &quot;[ BYTE 1:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[0]</span>
+<span class="c1">#         time.sleep(0.05)</span>
+<span class="c1">#     print &quot;[ BYTE 2:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[1]</span>
+<span class="c1">#     print &quot;[ BYTE 3:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[2]</span>
+<span class="c1">#     print &quot;[ BYTE 4:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[3]</span>
+<span class="c1">#     print &quot;[ BYTE 5:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[4]</span>
+<span class="c1">#     print &quot;[ BYTE 6:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[5]</span>
+<span class="c1">#     print &quot;[ BYTE 7:\t 0x%0.2X ]&quot;%msg.tagData.msg.data[6]</span>
+<span class="c1">#     print &quot;[ BYTE 8:\t 0x%0.2X ]\n&quot;%msg.tagData.msg.data[7]</span>
+            
+    <span class="n">oCANHW</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Jim Nilsson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
