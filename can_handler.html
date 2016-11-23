@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>1. CAN Handler &#8212; PyCAN 1.0.1 documentation</title>
+    <title>“can_handler” Module Documentation &#8212; PyCAN 1.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -43,12 +43,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="can-handler">
-<h1>1. CAN Handler<a class="headerlink" href="#can-handler" title="Permalink to this headline">¶</a></h1>
-<p>This is the documentation for the CAN handler objeect.</p>
+  <div class="section" id="can-handler-module-documentation">
+<h1>&#8220;can_handler&#8221; Module Documentation<a class="headerlink" href="#can-handler-module-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This is the documenation for the can handler.</p>
 <hr class="docutils" />
 <span class="target" id="module-can_handler"></span><div class="section" id="terms-and-conditions">
-<h2>1.1. Terms and conditions<a class="headerlink" href="#terms-and-conditions" title="Permalink to this headline">¶</a></h2>
+<h2>Terms and conditions<a class="headerlink" href="#terms-and-conditions" title="Permalink to this headline">¶</a></h2>
 <p>Copywrite 2009 Jim Nilsson.
 PyCAN is distributed under the terms of the GNU Lesser General Public License.</p>
 <blockquote>
@@ -65,6 +65,7 @@ GNU Lesser General Public License for more details.</p>
 GNU Lesser General Public License along with PyCAN.  
 If not, see &lt;<a class="reference external" href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</p>
 </div></blockquote>
+<hr class="docutils" />
 <dl class="class">
 <dt id="can_handler.CanHw">
 <em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanHw</code><a class="reference internal" href="_modules/can_handler.html#CanHw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHw" title="Permalink to this definition">¶</a></dt>
@@ -141,6 +142,9 @@ designed as a FIFO-Que see image bellow. Once the msg is retrieved from
 the buffer it is removed from the que and can&#8217;t be retrieved again. 
 Running the method again will retrieve the next message in the que and
 so forth until the que is empty.</p>
+<div class="figure align-center">
+<img alt="images/CanMsgBuffer.png" src="images/CanMsgBuffer.png" />
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -272,8 +276,7 @@ with a available channel to send and receive from.</p>
 <dl class="class">
 <dt id="can_handler.CanHwChannel">
 <em class="property">class </em><code class="descclassname">can_handler.</code><code class="descname">CanHwChannel</code><a class="reference internal" href="_modules/can_handler.html#CanHwChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#can_handler.CanHwChannel" title="Permalink to this definition">¶</a></dt>
-<dd><p><a href="#id1"><span class="problematic" id="id2">**</span></a>Description this is the generall hardware CAN channel class. 
-It contains all information about the used hardware
+<dd><p><a href="#id1"><span class="problematic" id="id2">**</span></a>Description this is the generall hardware CAN channel class. It contains all information about the used hardware
 to be able to open a channel for commuication over CAN.</p>
 </dd></dl>
 
@@ -406,8 +409,8 @@ thread frequency.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">1. CAN Handler</a><ul>
-<li><a class="reference internal" href="#terms-and-conditions">1.1. Terms and conditions</a></li>
+<li><a class="reference internal" href="#">&#8220;can_handler&#8221; Module Documentation</a><ul>
+<li><a class="reference internal" href="#terms-and-conditions">Terms and conditions</a></li>
 </ul>
 </li>
 </ul>

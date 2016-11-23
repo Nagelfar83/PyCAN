@@ -66,6 +66,8 @@
 <span class="sd">    You should have received a copy of the GNU General Public License and</span>
 <span class="sd">    GNU Lesser General Public License along with PyCAN.  </span>
 <span class="sd">    If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="sd">    </span>
+<span class="sd">--------------------------------------------------------------------------------------------------    </span>
 <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="c1">#IMPORTS</span>
@@ -74,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">ctypes</span>
 <span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">from</span> <span class="nn">can_vector_driver</span> <span class="k">import</span> <span class="n">XlDriver</span><span class="p">,</span> <span class="n">s_xl_event</span>                                                      
+<span class="kn">from</span> <span class="nn">Drivers.can_vector_driver</span> <span class="k">import</span> <span class="n">XlDriver</span><span class="p">,</span> <span class="n">s_xl_event</span>                                                      
 
 <span class="c1">#MODULE CONSTANTS</span>
 <span class="n">XL_INVALID_PORTHANDLE</span>       <span class="o">=</span>       <span class="o">-</span><span class="mi">1</span>
@@ -105,9 +107,8 @@
 
 <div class="viewcode-block" id="CanHwChannel"><a class="viewcode-back" href="../can_handler.html#can_handler.CanHwChannel">[docs]</a><span class="k">class</span> <span class="nc">CanHwChannel</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    **Description this is the generall hardware CAN channel class. </span>
-<span class="sd">    It contains all information about the used hardware</span>
-<span class="sd">    to be able to open a channel for commuication over CAN. </span>
+<span class="sd">        **Description this is the generall hardware CAN channel class. It contains all information about the used hardware</span>
+<span class="sd">        to be able to open a channel for commuication over CAN. </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__create</span><span class="p">()</span>
@@ -718,6 +719,8 @@
 <span class="sd">        Running the method again will retrieve the next message in the que and</span>
 <span class="sd">        so forth until the que is empty.</span>
 <span class="sd">        </span>
+<span class="sd">        .. figure:: images/CanMsgBuffer.png</span>
+<span class="sd">           :align: center</span>
 <span class="sd">           </span>
 <span class="sd">        :OUTPUT:</span>
 <span class="sd">        :param tmpMsg: Retrieved message from the msg buffer.</span>
