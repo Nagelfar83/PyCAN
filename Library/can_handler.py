@@ -20,6 +20,8 @@ PyCAN is distributed under the terms of the GNU Lesser General Public License.
     You should have received a copy of the GNU General Public License and
     GNU Lesser General Public License along with PyCAN.  
     If not, see <http://www.gnu.org/licenses/>.
+    
+--------------------------------------------------------------------------------------------------    
 '''
 
 #IMPORTS
@@ -28,7 +30,7 @@ import platform
 import time
 import ctypes
 import threading
-from can_vector_driver import XlDriver, s_xl_event                                                      
+from drivers.can_vector_driver import XlDriver, s_xl_event                                                      
 
 #MODULE CONSTANTS
 XL_INVALID_PORTHANDLE       =       -1
