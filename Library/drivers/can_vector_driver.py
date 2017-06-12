@@ -336,6 +336,77 @@ class XlDriver():
          255           :      'GENERAL ERROR'                       
     }
     
+    DRIVER_STATUS_MSG = \
+    {
+         0          :   'XL_SUCCESS',                   
+         1          :   'XL_PENDING',                   
+         10         :   'XL_ERR_QUEUE_IS_EMPTY',        
+         11         :   'XL_ERR_QUEUE_IS_FULL',         
+         12         :   'XL_ERR_TX_NOT_POSSIBLE',       
+         14         :   'XL_ERR_NO_LICENSE',            
+         101        :   'XL_ERR_WRONG_PARAMETER',       
+         110        :   'XL_ERR_TWICE_REGISTER',        
+         111        :   'XL_ERR_INVALID_CHAN_INDEX',   
+         112        :   'XL_ERR_INVALID_ACCESS',        
+         113        :   'XL_ERR_PORT_IS_OFFLINE',       
+         116        :   'XL_ERR_CHAN_IS_ONLINE',        
+         117        :   'XL_ERR_NOT_IMPLEMENTED',       
+         118        :   'XL_ERR_INVALID_PORT',          
+         120        :   'XL_ERR_HW_NOT_READY',          
+         121        :   'XL_ERR_CMD_TIMEOUT',           
+         122        :   'XL_ERR_CMD_HANDLING',          
+         129        :   'XL_ERR_HW_NOT_PRESENT',        
+         131        :   'XL_ERR_NOTIFY_ALREADY_ACTIVE', 
+         132        :   'XL_ERR_INVALID_TAG',           
+         133        :   'XL_ERR_INVALID_RESERVED_FLD',  
+         134        :   'XL_ERR_INVALID_SIZE',          
+         135        :   'XL_ERR_INSUFFICIENT_BUFFER',   
+         136        :   'XL_ERR_ERROR_CRC',             
+         137        :   'XL_ERR_BAD_EXE_FORMAT',        
+         138        :   'XL_ERR_NO_SYSTEM_RESOURCES',   
+         139        :   'XL_ERR_NOT_FOUND',             
+         140        :   'XL_ERR_INVALID_ADDRESS',       
+         141        :   'XL_ERR_REQ_NOT_ACCEP',         
+         142        :   'XL_ERR_INVALID_LEVEL',         
+         143        :   'XL_ERR_NO_DATA_DETECTED',      
+         144        :   'XL_ERR_INTERNAL_ERROR',        
+         145        :   'XL_ERR_UNEXP_NET_ERR',         
+         146        :   'XL_ERR_INVALID_USER_BUFFER',   
+         152        :   'XL_ERR_NO_RESOURCES',          
+         153        :   'XL_ERR_WRONG_CHIP_TYPE',       
+         154        :   'XL_ERR_WRONG_COMMAND',         
+         155        :   'XL_ERR_INVALID_HANDLE',        
+         157        :   'XL_ERR_RESERVED_NOT_ZERO',     
+         158        :   'XL_ERR_INIT_ACCESS_MISSING',   
+         201        :   'XL_ERR_CANNOT_OPEN_DRIVER',    
+         202        :   'XL_ERR_WRONG_BUS_TYPE',        
+         203        :   'XL_ERR_DLL_NOT_FOUND',         
+         204        :   'XL_ERR_INVALID_CHANNEL_MASK',  
+         205        :   'XL_ERR_NOT_SUPPORTED',         
+         210        :   'XL_ERR_CONNECTION_BROKEN',     
+         211        :   'XL_ERR_CONNECTION_CLOSED',     
+         212        :   'XL_ERR_INVALID_STREAM_NAME',   
+         213        :   'XL_ERR_CONNECTION_FAILED',     
+         214        :   'XL_ERR_STREAM_NOT_FOUND',      
+         215        :   'XL_ERR_STREAM_NOT_CONNECTED',  
+         216        :   'XL_ERR_QUEUE_OVERRUN',         
+         255        :   'XL_ERROR',                     
+         0x0201     :   'XL_ERR_INVALID_DLC',            #DLC with invalid value                                            
+         0x0202     :   'XL_ERR_INVALID_CANID',          #CAN Id has invalid bits set                                       
+         0x0203     :   'XL_ERR_INVALID_FDFLAG_MODE20',  #Flag set that must not be set when configured for CAN20 (e.g. EDL)
+         0x0204     :   'XL_ERR_EDL_RTR',                #RTR must not be set in combination with EDL                       
+         0x0205     :   'XL_ERR_EDL_NOT_SET',            #EDL is not set but BRS and/or ESICTRL is                          
+         0x0206     :   'XL_ERR_UNKNOWN_FLAG'            #Unknown bit in flags field is set                                 
+    }
+    
+
+                
+                
+                
+                
+                
+                
+    
     HARDWARE_TYPE_MSG = \
     {
          0             :       'XL_HWTYPE_NONE',                        
