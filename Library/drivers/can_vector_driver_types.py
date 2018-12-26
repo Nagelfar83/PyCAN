@@ -11,6 +11,8 @@ MAX_MSG_LEN = 8
 XL_MAX_LENGTH = 31
 XL_ACTIVATE_NONE = 0
 XL_INVALID_PORTHANDLE = -1
+XL_CHANNEL_NOT_FOUND = -1
+XL_NO_CHANNEL_MASK = 0
 XL_CONFIG_MAX_CHANNELS = 64
 XL_ACTIVATE_RESET_CLOCK = 8
 
@@ -487,192 +489,188 @@ IS_ON_BUS = {
 #
 ###############################################################
 
-DRIVER_STATUS_MSG = \
-{
-     0          :   'XL_SUCCESS',                   
-     1          :   'XL_PENDING',                   
-     10         :   'XL_ERR_QUEUE_IS_EMPTY',        
-     11         :   'XL_ERR_QUEUE_IS_FULL',         
-     12         :   'XL_ERR_TX_NOT_POSSIBLE',       
-     14         :   'XL_ERR_NO_LICENSE',            
-     101        :   'XL_ERR_WRONG_PARAMETER',       
-     110        :   'XL_ERR_TWICE_REGISTER',        
-     111        :   'XL_ERR_INVALID_CHAN_INDEX',   
-     112        :   'XL_ERR_INVALID_ACCESS',        
-     113        :   'XL_ERR_PORT_IS_OFFLINE',       
-     116        :   'XL_ERR_CHAN_IS_ONLINE',        
-     117        :   'XL_ERR_NOT_IMPLEMENTED',       
-     118        :   'XL_ERR_INVALID_PORT',          
-     120        :   'XL_ERR_HW_NOT_READY',          
-     121        :   'XL_ERR_CMD_TIMEOUT',           
-     122        :   'XL_ERR_CMD_HANDLING',          
-     129        :   'XL_ERR_HW_NOT_PRESENT',        
-     131        :   'XL_ERR_NOTIFY_ALREADY_ACTIVE', 
-     132        :   'XL_ERR_INVALID_TAG',           
-     133        :   'XL_ERR_INVALID_RESERVED_FLD',  
-     134        :   'XL_ERR_INVALID_SIZE',          
-     135        :   'XL_ERR_INSUFFICIENT_BUFFER',   
-     136        :   'XL_ERR_ERROR_CRC',             
-     137        :   'XL_ERR_BAD_EXE_FORMAT',        
-     138        :   'XL_ERR_NO_SYSTEM_RESOURCES',   
-     139        :   'XL_ERR_NOT_FOUND',             
-     140        :   'XL_ERR_INVALID_ADDRESS',       
-     141        :   'XL_ERR_REQ_NOT_ACCEP',         
-     142        :   'XL_ERR_INVALID_LEVEL',         
-     143        :   'XL_ERR_NO_DATA_DETECTED',      
-     144        :   'XL_ERR_INTERNAL_ERROR',        
-     145        :   'XL_ERR_UNEXP_NET_ERR',         
-     146        :   'XL_ERR_INVALID_USER_BUFFER',   
-     152        :   'XL_ERR_NO_RESOURCES',          
-     153        :   'XL_ERR_WRONG_CHIP_TYPE',       
-     154        :   'XL_ERR_WRONG_COMMAND',         
-     155        :   'XL_ERR_INVALID_HANDLE',        
-     157        :   'XL_ERR_RESERVED_NOT_ZERO',     
-     158        :   'XL_ERR_INIT_ACCESS_MISSING',   
-     201        :   'XL_ERR_CANNOT_OPEN_DRIVER',    
-     202        :   'XL_ERR_WRONG_BUS_TYPE',        
-     203        :   'XL_ERR_DLL_NOT_FOUND',         
-     204        :   'XL_ERR_INVALID_CHANNEL_MASK',  
-     205        :   'XL_ERR_NOT_SUPPORTED',         
-     210        :   'XL_ERR_CONNECTION_BROKEN',     
-     211        :   'XL_ERR_CONNECTION_CLOSED',     
-     212        :   'XL_ERR_INVALID_STREAM_NAME',   
-     213        :   'XL_ERR_CONNECTION_FAILED',     
-     214        :   'XL_ERR_STREAM_NOT_FOUND',      
-     215        :   'XL_ERR_STREAM_NOT_CONNECTED',  
-     216        :   'XL_ERR_QUEUE_OVERRUN',         
-     255        :   'XL_ERROR',                     
-     0x0201     :   'XL_ERR_INVALID_DLC',            #DLC with invalid value                                            
-     0x0202     :   'XL_ERR_INVALID_CANID',          #CAN Id has invalid bits set                                       
-     0x0203     :   'XL_ERR_INVALID_FDFLAG_MODE20',  #Flag set that must not be set when configured for CAN20 (e.g. EDL)
-     0x0204     :   'XL_ERR_EDL_RTR',                #RTR must not be set in combination with EDL                       
-     0x0205     :   'XL_ERR_EDL_NOT_SET',            #EDL is not set but BRS and/or ESICTRL is                          
-     0x0206     :   'XL_ERR_UNKNOWN_FLAG'            #Unknown bit in flags field is set                                 
-}
-  
-HARDWARE_TYPE_MSG = \
-{
-     0             :       'XL_HWTYPE_NONE',                        
-     1             :       'XL_HWTYPE_VIRTUAL',                     
-     2             :       'XL_HWTYPE_CANCARDX',                    
-     6             :       'XL_HWTYPE_CANAC2PCI',                   
-     12            :       'XL_HWTYPE_CANCARDY',                  
-     15            :       'XL_HWTYPE_CANCARDXL',                 
-     21            :       'XL_HWTYPE_CANCASEXL',                
-     23            :       'XL_HWTYPE_CANCASEXL_LOG_OBSOLETE',    
-     25            :       'XL_HWTYPE_CANBOARDXL',                
-     27            :       'XL_HWTYPE_CANBOARDXL_PXI',            
-     29            :       'XL_HWTYPE_VN2600',                    
-     29            :       'XL_HWTYPE_VN2610',                    
-     37            :       'XL_HWTYPE_VN3300',                    
-     39            :       'XL_HWTYPE_VN3600',                    
-     41            :       'XL_HWTYPE_VN7600',                    
-     43            :       'XL_HWTYPE_CANCARDXLE',                
-     45            :       'XL_HWTYPE_VN8900',                    
-     47            :       'XL_HWTYPE_VN8950',                    
-     53            :       'XL_HWTYPE_VN2640',                    
-     55            :       'XL_HWTYPE_VN1610',                    
-     57            :       'XL_HWTYPE_VN1630',                    
-     59            :       'XL_HWTYPE_VN1640',                    
-     61            :       'XL_HWTYPE_VN8970',                    
-     63            :       'XL_HWTYPE_VN1611',                    
-     61            :       'XL_HWTYPE_VT6204',                    
-     65            :       'XL_HWTYPE_VN5610',                    
-     67            :       'XL_HWTYPE_VN7570',                    
-     69            :       'XL_HWTYPE_IPCLIENT'                  
+DRIVER_STATUS_MSG = {
+    0:          'XL_SUCCESS',
+    1:          'XL_PENDING',
+    10:         'XL_ERR_QUEUE_IS_EMPTY',
+    11:         'XL_ERR_QUEUE_IS_FULL',
+    12:         'XL_ERR_TX_NOT_POSSIBLE',
+    14:         'XL_ERR_NO_LICENSE',
+    101:        'XL_ERR_WRONG_PARAMETER',
+    110:        'XL_ERR_TWICE_REGISTER',
+    111:        'XL_ERR_INVALID_CHAN_INDEX',
+    112:        'XL_ERR_INVALID_ACCESS',
+    113:        'XL_ERR_PORT_IS_OFFLINE',
+    116:        'XL_ERR_CHAN_IS_ONLINE',
+    117:        'XL_ERR_NOT_IMPLEMENTED',
+    118:        'XL_ERR_INVALID_PORT',
+    120:        'XL_ERR_HW_NOT_READY',
+    121:        'XL_ERR_CMD_TIMEOUT',
+    122:        'XL_ERR_CMD_HANDLING',
+    129:        'XL_ERR_HW_NOT_PRESENT',
+    131:        'XL_ERR_NOTIFY_ALREADY_ACTIVE',
+    132:        'XL_ERR_INVALID_TAG',
+    133:        'XL_ERR_INVALID_RESERVED_FLD',
+    134:        'XL_ERR_INVALID_SIZE',
+    135:        'XL_ERR_INSUFFICIENT_BUFFER',
+    136:        'XL_ERR_ERROR_CRC',
+    137:        'XL_ERR_BAD_EXE_FORMAT',
+    138:        'XL_ERR_NO_SYSTEM_RESOURCES',
+    139:        'XL_ERR_NOT_FOUND',
+    140:        'XL_ERR_INVALID_ADDRESS',
+    141:        'XL_ERR_REQ_NOT_ACCEP',
+    142:        'XL_ERR_INVALID_LEVEL',
+    143:        'XL_ERR_NO_DATA_DETECTED',
+    144:        'XL_ERR_INTERNAL_ERROR',
+    145:        'XL_ERR_UNEXP_NET_ERR',
+    146:        'XL_ERR_INVALID_USER_BUFFER',
+    152:        'XL_ERR_NO_RESOURCES',
+    153:        'XL_ERR_WRONG_CHIP_TYPE',
+    154:        'XL_ERR_WRONG_COMMAND',
+    155:        'XL_ERR_INVALID_HANDLE',
+    157:        'XL_ERR_RESERVED_NOT_ZERO',
+    158:        'XL_ERR_INIT_ACCESS_MISSING',
+    201:        'XL_ERR_CANNOT_OPEN_DRIVER',
+    202:        'XL_ERR_WRONG_BUS_TYPE',
+    203:        'XL_ERR_DLL_NOT_FOUND',
+    204:        'XL_ERR_INVALID_CHANNEL_MASK',
+    205:        'XL_ERR_NOT_SUPPORTED',
+    210:        'XL_ERR_CONNECTION_BROKEN',
+    211:        'XL_ERR_CONNECTION_CLOSED',
+    212:        'XL_ERR_INVALID_STREAM_NAME',
+    213:        'XL_ERR_CONNECTION_FAILED',
+    214:        'XL_ERR_STREAM_NOT_FOUND',
+    215:        'XL_ERR_STREAM_NOT_CONNECTED',
+    216:        'XL_ERR_QUEUE_OVERRUN',
+    255:        'XL_ERROR',
+    0x0201:     'XL_ERR_INVALID_DLC',            # DLC with invalid value
+    0x0202:     'XL_ERR_INVALID_CANID',          # CAN Id has invalid bits set
+    0x0203:     'XL_ERR_INVALID_FDFLAG_MODE20',  # Flag set that must not be set when configured for CAN20 (e.g. EDL)
+    0x0204:     'XL_ERR_EDL_RTR',                # RTR must not be set in combination with EDL
+    0x0205:     'XL_ERR_EDL_NOT_SET',            # EDL is not set but BRS and/or ESICTRL is
+    0x0206:     'XL_ERR_UNKNOWN_FLAG'            # Unknown bit in flags field is set
 }
 
-TRANSCEIVER_TYPE_MSG = \
-{
-    0x0000 : 'XL_TRANSCEIVER_TYPE_NONE',                     
-    0x0001 : 'XL_TRANSCEIVER_TYPE_CAN_251',                  
-    0x0002 : 'XL_TRANSCEIVER_TYPE_CAN_252',                  
-    0x0003 : 'XL_TRANSCEIVER_TYPE_CAN_DNOPTO',               
-    0x0005 : 'XL_TRANSCEIVER_TYPE_CAN_SWC_PROTO',           # Prototype. Driver may latch-up.
-    0x0006 : 'XL_TRANSCEIVER_TYPE_CAN_SWC',                 
-    0x0007 : 'XL_TRANSCEIVER_TYPE_CAN_EVA',                 
-    0x0008 : 'XL_TRANSCEIVER_TYPE_CAN_FIBER',               
-    0x000B : 'XL_TRANSCEIVER_TYPE_CAN_1054_OPTO',           # 1054 with optical isolation
-    0x000C : 'XL_TRANSCEIVER_TYPE_CAN_SWC_OPTO',            # SWC with optical isolation
-    0x000D : 'XL_TRANSCEIVER_TYPE_CAN_B10011S',             # B10011S truck-and-trailer
-    0x000E : 'XL_TRANSCEIVER_TYPE_CAN_1050',                # 1050
-    0x000F : 'XL_TRANSCEIVER_TYPE_CAN_1050_OPTO',           # 1050 with optical isolation
-    0x0010 : 'XL_TRANSCEIVER_TYPE_CAN_1041',                # 1041
-    0x0011 : 'XL_TRANSCEIVER_TYPE_CAN_1041_OPTO',           # 1041 with optical isolation
-    0x0016 : 'XL_TRANSCEIVER_TYPE_CAN_VIRTUAL',             # Virtual CAN Trasceiver for Virtual CAN Bus Driver
-    0x0017 : 'XL_TRANSCEIVER_TYPE_LIN_6258_OPTO',           # Vector LINcab 6258opto with transceiver Infineon TLE6258 
-    0x0019 : 'XL_TRANSCEIVER_TYPE_LIN_6259_OPTO',           # Vector LINcab 6259opto with transceiver Infineon TLE6259
-    0x001D : 'XL_TRANSCEIVER_TYPE_DAIO_8444_OPTO',          # Vector IOcab 8444  (8 dig.Inp.; 4 dig.Outp.; 4 ana.Inp.; 4 ana.Outp.)
-    0x0021 : 'XL_TRANSCEIVER_TYPE_CAN_1041A_OPTO',          # 1041A with optical isolation
-    0x0023 : 'XL_TRANSCEIVER_TYPE_LIN_6259_MAG',            # LIN transceiver 6259, with transceiver Infineon TLE6259, magnetically isolated, stress functionality
-    0x0025 : 'XL_TRANSCEIVER_TYPE_LIN_7259_MAG',            # LIN transceiver 7259, with transceiver Infineon TLE7259, magnetically isolated, stress functionality
-    0x0027 : 'XL_TRANSCEIVER_TYPE_LIN_7269_MAG',            # LIN transceiver 7269, with transceiver Infineon TLE7269, magnetically isolated, stress functionality
-    0x0033 : 'XL_TRANSCEIVER_TYPE_CAN_1054_MAG',            # TJA1054, magnetically isolated, with selectable termination resistor (via 4th IO line) 
-    0x0035 : 'XL_TRANSCEIVER_TYPE_CAN_251_MAG',             # 82C250/251 or equivalent, magnetically isolated
-    0x0037 : 'XL_TRANSCEIVER_TYPE_CAN_1050_MAG',            # TJA1050, magnetically isolated
-    0x0039 : 'XL_TRANSCEIVER_TYPE_CAN_1040_MAG',            # TJA1040, magnetically isolated
-    0x003B : 'XL_TRANSCEIVER_TYPE_CAN_1041A_MAG',           # TJA1041A, magnetically isolated
-    0x0080 : 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1041A_MAG',      # TWINcab with two TJA1041, magnetically isolated
-    0x0081 : 'XL_TRANSCEIVER_TYPE_TWIN_LIN_7269_MAG',       # TWINcab with two 7259, Infineon TLE7259, magnetically isolated, stress functionality
-    0x0082 : 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1041AV2_MAG',    # TWINcab with two TJA1041, magnetically isolated
-    0x0083 : 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1054_1041A_MAG', # TWINcab with TJA1054A and TJA1041A with magnetic isolation
-    0x0101 : 'XL_TRANSCEIVER_TYPE_PB_CAN_251',               
-    0x0103 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1054',              
-    0x0105 : 'XL_TRANSCEIVER_TYPE_PB_CAN_251_OPTO',          
-    0x010B : 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC',               
-    0x0115 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1054_OPTO',         
-    0x0117 : 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC_OPTO',          
-    0x0119 : 'XL_TRANSCEIVER_TYPE_PB_CAN_TT_OPTO',           
-    0x011B : 'XL_TRANSCEIVER_TYPE_PB_CAN_1050',              
-    0x011D : 'XL_TRANSCEIVER_TYPE_PB_CAN_1050_OPTO',         
-    0x011F : 'XL_TRANSCEIVER_TYPE_PB_CAN_1041',              
-    0x0121 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1041_OPTO',         
-    0x0129 : 'XL_TRANSCEIVER_TYPE_PB_LIN_6258_OPTO',        # LIN piggy back with transceiver Infineon TLE6258
-    0x012B : 'XL_TRANSCEIVER_TYPE_PB_LIN_6259_OPTO',        # LIN piggy back with transceiver Infineon TLE6259
-    0x012D : 'XL_TRANSCEIVER_TYPE_PB_LIN_6259_MAG',         # LIN piggy back with transceiver Infineon TLE6259, magnetically isolated, stress functionality
-    0x012F : 'XL_TRANSCEIVER_TYPE_PB_CAN_1041A_OPTO',       # CAN transceiver 1041A
-    0x0131 : 'XL_TRANSCEIVER_TYPE_PB_LIN_7259_MAG',         # LIN piggy back with transceiver Infineon TLE7259, magnetically isolated, stress functionality
-    0x0133 : 'XL_TRANSCEIVER_TYPE_PB_LIN_7269_MAG',         # LIN piggy back with transceiver Infineon TLE7269, magnetically isolated, stress functionality
-    0x0135 : 'XL_TRANSCEIVER_TYPE_PB_CAN_251_MAG',          # 82C250/251 or compatible, magnetically isolated
-    0x0136 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1050_MAG',         # TJA 1050, magnetically isolated
-    0x0137 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1040_MAG',         # TJA 1040, magnetically isolated
-    0x0138 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1041A_MAG',        # TJA 1041A, magnetically isolated
-    0x0139 : 'XL_TRANSCEIVER_TYPE_PB_DAIO_8444_OPTO',       # optically isolated IO piggy
-    0x013B : 'XL_TRANSCEIVER_TYPE_PB_CAN_1054_MAG',         # TJA1054, magnetically isolated, with selectable termination resistor (via 4th IO line) 
-    0x013C : 'XL_TRANSCEIVER_TYPE_CAN_1051_CAP_FIX',        # TJA1051 - fixed transceiver on e.g. 16xx/8970
-    0x013D : 'XL_TRANSCEIVER_TYPE_DAIO_1021_FIX',           # Onboard IO of VN1630/VN1640 
-    0x013E : 'XL_TRANSCEIVER_TYPE_LIN_7269_CAP_FIX',        # TLE7269 - fixed transceiver on 1611
-    0x013F : 'XL_TRANSCEIVER_TYPE_PB_CAN_1051_CAP',         # TJA 1051, capacitive isolated
-    0x0140 : 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC_7356_CAP',     # Single Wire NCV7356, capacitive isolated
-    0x0141 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1055_CAP',         # TJA1055, capacitive isolated, with selectable termination resistor (via 4th IO line) 
-    0x0142 : 'XL_TRANSCEIVER_TYPE_PB_CAN_1057_CAP',         # TJA 1057, capacitive isolated
-    0x0143 : 'XL_TRANSCEIVER_TYPE_A429_HOLT8596_FIX',       # Onboard HOLT 8596 TX transceiver on VN0601
-    0x0144 : 'XL_TRANSCEIVER_TYPE_A429_HOLT8455_FIX',       # Onboard HOLT 8455 RX transceiver on VN0601
-    0x0201 : 'XL_TRANSCEIVER_TYPE_PB_FR_1080',              # TJA 1080
-    0x0202 : 'XL_TRANSCEIVER_TYPE_PB_FR_1080_MAG',          # TJA 1080 magnetically isolated piggy
-    0x0203 : 'XL_TRANSCEIVER_TYPE_PB_FR_1080A_MAG',         # TJA 1080A magnetically isolated piggy
-    0x0204 : 'XL_TRANSCEIVER_TYPE_PB_FR_1082_CAP',          # TJA 1082 capacitive isolated piggy
-    0x0205 : 'XL_TRANSCEIVER_TYPE_PB_FRC_1082_CAP',         # TJA 1082 capacitive isolated piggy with CANpiggy form factor
-    0x0206 : 'XL_TRANSCEIVER_TYPE_FR_1082_CAP_FIX',         # TJA 1082 capacitive isolated piggy fixed transceiver - e.g. 7610
-    0x0220 : 'XL_TRANSCEIVER_TYPE_MOST150_ONBOARD',         # Onboard MOST150 transceiver of VN2640
-    0x0230 : 'XL_TRANSCEIVER_TYPE_ETH_BCM54810_FIX',        # Onboard Broadcom Ethernet PHY on VN5610 and VX0312
-    0x0231 : 'XL_TRANSCEIVER_TYPE_ETH_AR8031_FIX',          # Onboard Atheros Ethernet PHY
-    0x0232 : 'XL_TRANSCEIVER_TYPE_ETH_BCM89810_FIX',        # Onboard Broadcom Ethernet PHY
-    0x0233 : 'XL_TRANSCEIVER_TYPE_ETH_TJA1100_FIX',         # Onboard NXP Ethernet PHY
-    0x0234 : 'XL_TRANSCEIVER_TYPE_ETH_BCM54810_89811_FIX',  # Onboard Broadcom Ethernet PHYs (e.g. VN5610A - BCM54810: RJ45, BCM89811: DSUB)
-    0x0280 : 'XL_TRANSCEIVER_TYPE_PB_DAIO_8642',            # Iopiggy for VN8900
-    0x028f : 'XL_TRANSCEIVER_TYPE_DAIO_AL_ONLY',            # virtual piggy type for activation line only (e.g. VN8810ini)
-    0x0290 : 'XL_TRANSCEIVER_TYPE_DAIO_1021_FIX_WITH_AL',   # On board IO with Activation Line (e.g. VN5640) 
-    0x0291 : 'XL_TRANSCEIVER_TYPE_DAIO_AL_WU',              # virtual piggy type for activation line and WakeUp Line only (e.g. VN5610A)                                
+HARDWARE_TYPE_MSG = {
+    0:     'XL_HWTYPE_NONE',
+    1:     'XL_HWTYPE_VIRTUAL',
+    2:     'XL_HWTYPE_CANCARDX',
+    6:     'XL_HWTYPE_CANAC2PCI',
+    12:    'XL_HWTYPE_CANCARDY',
+    15:    'XL_HWTYPE_CANCARDXL',
+    21:    'XL_HWTYPE_CANCASEXL',
+    23:    'XL_HWTYPE_CANCASEXL_LOG_OBSOLETE',
+    25:    'XL_HWTYPE_CANBOARDXL',
+    27:    'XL_HWTYPE_CANBOARDXL_PXI',
+    29:    'XL_HWTYPE_VN2600',
+    29:    'XL_HWTYPE_VN2610',
+    37:    'XL_HWTYPE_VN3300',
+    39:    'XL_HWTYPE_VN3600',
+    41:    'XL_HWTYPE_VN7600',
+    43:    'XL_HWTYPE_CANCARDXLE',
+    45:    'XL_HWTYPE_VN8900',
+    47:    'XL_HWTYPE_VN8950',
+    53:    'XL_HWTYPE_VN2640',
+    55:    'XL_HWTYPE_VN1610',
+    57:    'XL_HWTYPE_VN1630',
+    59:    'XL_HWTYPE_VN1640',
+    61:    'XL_HWTYPE_VN8970',
+    63:    'XL_HWTYPE_VN1611',
+    61:    'XL_HWTYPE_VT6204',
+    65:    'XL_HWTYPE_VN5610',
+    67:    'XL_HWTYPE_VN7570',
+    69:    'XL_HWTYPE_IPCLIENT'
 }
 
-BUS_TYPE_MSG = \
-{
-     0x00000000    :       'XL_BUS_TYPE_NONE', 
-     0x00000001    :       'XL_BUS_TYPE_CAN',
-     0x00000002    :       'XL_BUS_TYPE_LIN',
-     0x00000004    :       'XL_BUS_TYPE_FLEXRAY',
-     0x00000010    :       'XL_BUS_TYPE_MOST',
-     0x00000040    :       'XL_BUS_TYPE_DAIO',
-     0x00000100    :       'XL_BUS_TYPE_J1708'  
+TRANSCEIVER_TYPE_MSG = {
+    0x0000: 'XL_TRANSCEIVER_TYPE_NONE',
+    0x0001: 'XL_TRANSCEIVER_TYPE_CAN_251',
+    0x0002: 'XL_TRANSCEIVER_TYPE_CAN_252',
+    0x0003: 'XL_TRANSCEIVER_TYPE_CAN_DNOPTO',
+    0x0005: 'XL_TRANSCEIVER_TYPE_CAN_SWC_PROTO',            # Prototype. Driver may latch-up.
+    0x0006: 'XL_TRANSCEIVER_TYPE_CAN_SWC',
+    0x0007: 'XL_TRANSCEIVER_TYPE_CAN_EVA',
+    0x0008: 'XL_TRANSCEIVER_TYPE_CAN_FIBER',
+    0x000B: 'XL_TRANSCEIVER_TYPE_CAN_1054_OPTO',            # 1054 with optical isolation
+    0x000C: 'XL_TRANSCEIVER_TYPE_CAN_SWC_OPTO',             # SWC with optical isolation
+    0x000D: 'XL_TRANSCEIVER_TYPE_CAN_B10011S',              # B10011S truck-and-trailer
+    0x000E: 'XL_TRANSCEIVER_TYPE_CAN_1050',                 # 1050
+    0x000F: 'XL_TRANSCEIVER_TYPE_CAN_1050_OPTO',            # 1050 with optical isolation
+    0x0010: 'XL_TRANSCEIVER_TYPE_CAN_1041',                 # 1041
+    0x0011: 'XL_TRANSCEIVER_TYPE_CAN_1041_OPTO',            # 1041 with optical isolation
+    0x0016: 'XL_TRANSCEIVER_TYPE_CAN_VIRTUAL',              # Virtual CAN Trasceiver for Virtual CAN Bus Driver
+    0x0017: 'XL_TRANSCEIVER_TYPE_LIN_6258_OPTO',            # Vector LINcab 6258opto with transceiver Infineon TLE6258
+    0x0019: 'XL_TRANSCEIVER_TYPE_LIN_6259_OPTO',            # Vector LINcab 6259opto with transceiver Infineon TLE6259
+    0x001D: 'XL_TRANSCEIVER_TYPE_DAIO_8444_OPTO',           # Vector IOcab 8444  (8 dig.Inp.; 4 dig.Outp.; 4 ana.Inp.; 4 ana.Outp.)
+    0x0021: 'XL_TRANSCEIVER_TYPE_CAN_1041A_OPTO',           # 1041A with optical isolation
+    0x0023: 'XL_TRANSCEIVER_TYPE_LIN_6259_MAG',             # LIN transceiver 6259, with transceiver Infineon TLE6259, magnetically isolated, stress functionality
+    0x0025: 'XL_TRANSCEIVER_TYPE_LIN_7259_MAG',             # LIN transceiver 7259, with transceiver Infineon TLE7259, magnetically isolated, stress functionality
+    0x0027: 'XL_TRANSCEIVER_TYPE_LIN_7269_MAG',             # LIN transceiver 7269, with transceiver Infineon TLE7269, magnetically isolated, stress functionality
+    0x0033: 'XL_TRANSCEIVER_TYPE_CAN_1054_MAG',             # TJA1054, magnetically isolated, with selectable termination resistor (via 4th IO line)
+    0x0035: 'XL_TRANSCEIVER_TYPE_CAN_251_MAG',              # 82C250/251 or equivalent, magnetically isolated
+    0x0037: 'XL_TRANSCEIVER_TYPE_CAN_1050_MAG',             # TJA1050, magnetically isolated
+    0x0039: 'XL_TRANSCEIVER_TYPE_CAN_1040_MAG',             # TJA1040, magnetically isolated
+    0x003B: 'XL_TRANSCEIVER_TYPE_CAN_1041A_MAG',            # TJA1041A, magnetically isolated
+    0x0080: 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1041A_MAG',       # TWINcab with two TJA1041, magnetically isolated
+    0x0081: 'XL_TRANSCEIVER_TYPE_TWIN_LIN_7269_MAG',        # TWINcab with two 7259, Infineon TLE7259, magnetically isolated, stress functionality
+    0x0082: 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1041AV2_MAG',     # TWINcab with two TJA1041, magnetically isolated
+    0x0083: 'XL_TRANSCEIVER_TYPE_TWIN_CAN_1054_1041A_MAG',  # TWINcab with TJA1054A and TJA1041A with magnetic isolation
+    0x0101: 'XL_TRANSCEIVER_TYPE_PB_CAN_251',
+    0x0103: 'XL_TRANSCEIVER_TYPE_PB_CAN_1054',
+    0x0105: 'XL_TRANSCEIVER_TYPE_PB_CAN_251_OPTO',
+    0x010B: 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC',
+    0x0115: 'XL_TRANSCEIVER_TYPE_PB_CAN_1054_OPTO',
+    0x0117: 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC_OPTO',
+    0x0119: 'XL_TRANSCEIVER_TYPE_PB_CAN_TT_OPTO',
+    0x011B: 'XL_TRANSCEIVER_TYPE_PB_CAN_1050',
+    0x011D: 'XL_TRANSCEIVER_TYPE_PB_CAN_1050_OPTO',
+    0x011F: 'XL_TRANSCEIVER_TYPE_PB_CAN_1041',
+    0x0121: 'XL_TRANSCEIVER_TYPE_PB_CAN_1041_OPTO',
+    0x0129: 'XL_TRANSCEIVER_TYPE_PB_LIN_6258_OPTO',        # LIN piggy back with transceiver Infineon TLE6258
+    0x012B: 'XL_TRANSCEIVER_TYPE_PB_LIN_6259_OPTO',        # LIN piggy back with transceiver Infineon TLE6259
+    0x012D: 'XL_TRANSCEIVER_TYPE_PB_LIN_6259_MAG',         # LIN piggy back with transceiver Infineon TLE6259, magnetically isolated, stress functionality
+    0x012F: 'XL_TRANSCEIVER_TYPE_PB_CAN_1041A_OPTO',       # CAN transceiver 1041A
+    0x0131: 'XL_TRANSCEIVER_TYPE_PB_LIN_7259_MAG',         # LIN piggy back with transceiver Infineon TLE7259, magnetically isolated, stress functionality
+    0x0133: 'XL_TRANSCEIVER_TYPE_PB_LIN_7269_MAG',         # LIN piggy back with transceiver Infineon TLE7269, magnetically isolated, stress functionality
+    0x0135: 'XL_TRANSCEIVER_TYPE_PB_CAN_251_MAG',          # 82C250/251 or compatible, magnetically isolated
+    0x0136: 'XL_TRANSCEIVER_TYPE_PB_CAN_1050_MAG',         # TJA 1050, magnetically isolated
+    0x0137: 'XL_TRANSCEIVER_TYPE_PB_CAN_1040_MAG',         # TJA 1040, magnetically isolated
+    0x0138: 'XL_TRANSCEIVER_TYPE_PB_CAN_1041A_MAG',        # TJA 1041A, magnetically isolated
+    0x0139: 'XL_TRANSCEIVER_TYPE_PB_DAIO_8444_OPTO',       # optically isolated IO piggy
+    0x013B: 'XL_TRANSCEIVER_TYPE_PB_CAN_1054_MAG',         # TJA1054, magnetically isolated, with selectable termination resistor (via 4th IO line)
+    0x013C: 'XL_TRANSCEIVER_TYPE_CAN_1051_CAP_FIX',        # TJA1051 - fixed transceiver on e.g. 16xx/8970
+    0x013D: 'XL_TRANSCEIVER_TYPE_DAIO_1021_FIX',           # Onboard IO of VN1630/VN1640
+    0x013E: 'XL_TRANSCEIVER_TYPE_LIN_7269_CAP_FIX',        # TLE7269 - fixed transceiver on 1611
+    0x013F: 'XL_TRANSCEIVER_TYPE_PB_CAN_1051_CAP',         # TJA 1051, capacitive isolated
+    0x0140: 'XL_TRANSCEIVER_TYPE_PB_CAN_SWC_7356_CAP',     # Single Wire NCV7356, capacitive isolated
+    0x0141: 'XL_TRANSCEIVER_TYPE_PB_CAN_1055_CAP',         # TJA1055, capacitive isolated, with selectable termination resistor (via 4th IO line)
+    0x0142: 'XL_TRANSCEIVER_TYPE_PB_CAN_1057_CAP',         # TJA 1057, capacitive isolated
+    0x0143: 'XL_TRANSCEIVER_TYPE_A429_HOLT8596_FIX',       # Onboard HOLT 8596 TX transceiver on VN0601
+    0x0144: 'XL_TRANSCEIVER_TYPE_A429_HOLT8455_FIX',       # Onboard HOLT 8455 RX transceiver on VN0601
+    0x0201: 'XL_TRANSCEIVER_TYPE_PB_FR_1080',              # TJA 1080
+    0x0202: 'XL_TRANSCEIVER_TYPE_PB_FR_1080_MAG',          # TJA 1080 magnetically isolated piggy
+    0x0203: 'XL_TRANSCEIVER_TYPE_PB_FR_1080A_MAG',         # TJA 1080A magnetically isolated piggy
+    0x0204: 'XL_TRANSCEIVER_TYPE_PB_FR_1082_CAP',          # TJA 1082 capacitive isolated piggy
+    0x0205: 'XL_TRANSCEIVER_TYPE_PB_FRC_1082_CAP',         # TJA 1082 capacitive isolated piggy with CANpiggy form factor
+    0x0206: 'XL_TRANSCEIVER_TYPE_FR_1082_CAP_FIX',         # TJA 1082 capacitive isolated piggy fixed transceiver - e.g. 7610
+    0x0220: 'XL_TRANSCEIVER_TYPE_MOST150_ONBOARD',         # Onboard MOST150 transceiver of VN2640
+    0x0230: 'XL_TRANSCEIVER_TYPE_ETH_BCM54810_FIX',        # Onboard Broadcom Ethernet PHY on VN5610 and VX0312
+    0x0231: 'XL_TRANSCEIVER_TYPE_ETH_AR8031_FIX',          # Onboard Atheros Ethernet PHY
+    0x0232: 'XL_TRANSCEIVER_TYPE_ETH_BCM89810_FIX',        # Onboard Broadcom Ethernet PHY
+    0x0233: 'XL_TRANSCEIVER_TYPE_ETH_TJA1100_FIX',         # Onboard NXP Ethernet PHY
+    0x0234: 'XL_TRANSCEIVER_TYPE_ETH_BCM54810_89811_FIX',  # Onboard Broadcom Ethernet PHYs (e.g. VN5610A - BCM54810: RJ45, BCM89811: DSUB)
+    0x0280: 'XL_TRANSCEIVER_TYPE_PB_DAIO_8642',            # Iopiggy for VN8900
+    0x028f: 'XL_TRANSCEIVER_TYPE_DAIO_AL_ONLY',            # virtual piggy type for activation line only (e.g. VN8810ini)
+    0x0290: 'XL_TRANSCEIVER_TYPE_DAIO_1021_FIX_WITH_AL',   # On board IO with Activation Line (e.g. VN5640)
+    0x0291: 'XL_TRANSCEIVER_TYPE_DAIO_AL_WU',              # virtual piggy type for activation line and WakeUp Line only (e.g. VN5610A)
+}
+
+BUS_TYPE_MSG = {
+    0x00000000:     'XL_BUS_TYPE_NONE',
+    0x00000001:     'XL_BUS_TYPE_CAN',
+    0x00000002:     'XL_BUS_TYPE_LIN',
+    0x00000004:     'XL_BUS_TYPE_FLEXRAY',
+    0x00000010:     'XL_BUS_TYPE_MOST',
+    0x00000040:     'XL_BUS_TYPE_DAIO',
+    0x00000100:     'XL_BUS_TYPE_J1708'
 }

@@ -5,32 +5,30 @@ Terms and conditions
 Copywrite 2009 Jim Nilsson.
 PyCAN is distributed under the terms of the GNU Lesser General Public License.
 
-    This file is part of the PyCAN Libary.
+This file is part of the PyCAN Libary.
 
-    PyCAN is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+PyCAN is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    PyCAN is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+PyCAN is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License and
-    GNU Lesser General Public License along with PyCAN.  
-    If not, see <http://www.gnu.org/licenses/>.
-    
---------------------------------------------------------------------------------------------------    
+You should have received a copy of the GNU General Public License and
+GNU Lesser General Public License along with PyCAN.
+If not, see <http://www.gnu.org/licenses/>.
 '''
 
-#IMPORTS
+# IMPORTS
 import re
 import platform
 import time
 import ctypes
 import threading
-from drivers.can_vector_driver import XlDriver, s_xl_event                                                      
+from drivers.can_vector_driver import XlDriver, s_xl_event
 
 #MODULE CONSTANTS
 XL_INVALID_PORTHANDLE       =       -1
@@ -66,12 +64,12 @@ class CanHwChannel():
     """
     def __init__(self):
         self.__create()
-        
+
     def __create(self):
-        self.__hardware                 = None
-        self.__dllVersion               = None 
-        self.__numberOfChannels         = None 
-        self.__channelName              = None 
+        self.__hardware = None
+        self.__dllVersion = None
+        self.__numberOfChannels = None
+        self.__channelName = None
         self.__hardwareType             = None 
         self.__hardwareIndex            = None 
         self.__hardwareChannel          = None 
@@ -86,7 +84,7 @@ class CanHwChannel():
         self.__transceiverName          = None
         self.__portHandle               = None
         self.__accessMask               = None
-        
+
     def __setHardware(self, value):
         self.__hardware = value
         
